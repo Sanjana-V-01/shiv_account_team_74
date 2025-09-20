@@ -2,13 +2,15 @@
 
 ## Getting Started
 
-Follow these instructions to set up and run the project on your local machine.
+Follow these instructions to set up and run the project on your local machine. The application uses Firebase for its backend, including Firestore for the database, Firebase Authentication for user management, and Cloud Functions for server-side logic like cascading deletes and stock updates.
 
 ### Prerequisites
 
 *   [Node.js](https://nodejs.org/) (v16 or later)
 *   [npm](https://www.npmjs.com/) (Node Package Manager)
 *   [Git](https://git-scm.com/)
+*   **Firebase Project**: A Firebase project configured with Firestore in Native Mode, Firebase Authentication, and Cloud Functions enabled. (See Firebase Setup below)
+*   **Firebase CLI**: [Firebase CLI](https://firebase.google.com/docs/cli#install_the_firebase_cli) installed globally (`npm install -g firebase-tools`)
 
 ### Installation & Setup
 
@@ -18,24 +20,56 @@ Follow these instructions to set up and run the project on your local machine.
     cd shiv_acct
     ```
 
-2.  **Set up the Backend Server:**
+2.  **Firebase Project Setup (One-time for your Firebase Project)**
+    *   Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+    *   **Crucially**, when setting up Firestore, ensure you select **"Firestore in Native Mode"**.
+    *   Enable **Firebase Authentication** (Email/Password provider).
+    *   Upgrade your project to the **Blaze plan (pay-as-you-go)**. (Note: You only pay if you exceed the free tier limits).
+
+3.  **Configure Firebase Credentials:**
+    *   **For the Client (React App):**
+        *   In your Firebase project settings, add a new Web App (`</>`).
+        *   Copy the `firebaseConfig` object provided. You will paste this into `client/src/firebase.js`.
+    *   **For the Server (Node.js/Express):**
+        *   In your Firebase project settings, go to the "Service accounts" tab.
+        *   Click "Generate new private key" and download the JSON file.
+        *   Rename this file to `firebase-service-account.json` and place it in the `server/` directory of your cloned project.
+        *   **IMPORTANT**: This file is sensitive and is already ignored by `.gitignore`.
+
+4.  **Associate Project with Firebase CLI:**
     *   Navigate to the `server` directory:
         ```sh
         cd server
         ```
-    *   Install dependencies:
+    *   Log in to Firebase CLI:
         ```sh
+        firebase login
+        ```
+    *   Initialize Firebase for functions and Firestore rules (select `Functions` and `Firestore`):
+        ```sh
+        firebase init
+        ```
+        *   Select "Use an existing project" and choose your Firebase project (`acct-hackathon`).
+        *   Select `JavaScript` for functions language, and `No` for ESLint.
+        *   Accept default filenames for Firestore rules and indexes.
+        *   Install npm dependencies when prompted.
+
+5.  **Install Node.js Dependencies:**
+    *   **For the Backend Server:**
+        ```sh
+        cd server
+        npm install
+        ```
+    *   **For the Frontend Client:**
+        ```sh
+        cd ../client
         npm install
         ```
 
-3.  **Set up the Frontend Client:**
-    *   Navigate to the `client` directory:
+6.  **Deploy Cloud Functions:**
+    *   From the `server` directory, deploy the Cloud Functions for cascading deletes and stock updates:
         ```sh
-        cd ../client
-        ```
-    *   Install dependencies:
-        ```sh
-        npm install
+        firebase deploy --only functions
         ```
 
 ### Running the Application
@@ -43,7 +77,7 @@ Follow these instructions to set up and run the project on your local machine.
 1.  **Start the Backend Server:**
     *   In a terminal, navigate to the `server` directory and run:
     ```sh
-    npm run dev
+    node index.js
     ```
     *   The API server will be running at `http://localhost:3001`.
 
@@ -67,25 +101,27 @@ To create a centralized and automated accounting system that replaces manual boo
 
 ## 2. Key Features Implemented
 
-*   **User Authentication**: Secure Login and Registration.
+*   **User Authentication**: Secure Login and Registration using Firebase Authentication.
 *   **Master Data Management**: Full CRUD (Create, Read, Update, Delete) for:
     *   Contacts (Customers, Vendors)
-    *   Products
+    *   Products (now with direct `currentStock` management)
     *   Taxes
     *   Chart of Accounts
 *   **Purchase Workflow**: End-to-end process:
     *   Purchase Orders (Creation, Listing, Viewing Details)
     *   Vendor Bills (Conversion from PO, Listing)
     *   Payments (Registration against Bills)
+    *   **Automated Stock Update**: Creating a Purchase Order now automatically increases product `currentStock`.
 *   **Sales Workflow**: End-to-end process:
     *   Sales Orders (Creation, Listing, Viewing Details)
     *   Customer Invoices (Conversion from SO, Listing)
     *   Receipts (Registration against Invoices)
 *   **Reporting**: Real-time generation of:
     *   Profit & Loss Statement
-    *   Stock Account / Inventory Report
+    *   Stock Account / Inventory Report (now based on direct `currentStock`)
     *   Balance Sheet
 *   **Dashboard**: Summary of key financial metrics.
+*   **Cascading Deletes**: Deleting a Purchase Order automatically deletes associated Vendor Bills. Deleting a Sales Order automatically deletes associated Customer Invoices.
 
 ---
 
@@ -108,185 +144,168 @@ The system defines three distinct user roles with specific access levels:
 The application follows a client-server architecture:
 *   **Frontend (Client)**: Built with React (Vite) for a dynamic single-page application (SPA).
 *   **Backend (Server)**: Built with Node.js and Express.js, serving as a RESTful API.
-*   **Database**: Simple JSON file-based storage for quick prototyping. Each major entity has its own `.json` file (e.g., `users.json`, `contacts.json`).
+*   **Database**: **Google Cloud Firestore (Native Mode)** for robust, scalable, and real-time data storage.
+*   **Authentication**: **Firebase Authentication** for secure user management.
+*   **Server-side Logic**: **Firebase Cloud Functions** for automated tasks like cascading deletes and stock updates.
 
-### 4.2. Data Models (JSON File Structures)
+### 4.2. Data Models (Firestore Collections)
 
-#### `users.json`
-Stores user authentication details.
+Data is now stored in Firestore collections. The structure within each document generally mirrors the previous JSON structures, with IDs now being Firestore-generated document IDs.
+
+#### `users` Collection
+Stores additional user details linked by Firebase Authentication UID.
 ```json
-[
-  {
-    "id": 1,
-    "name": "John Doe",
-    "loginId": "johndoe",
-    "email": "john.doe@example.com",
-    "password": "$2a$10$hashedpassword",
-    "role": "Invoicing User"
-  }
-]
+// Document ID is Firebase Auth UID
+{
+  "name": "John Doe",
+  "loginId": "johndoe",
+  "email": "john.doe@example.com",
+  "role": "Invoicing User"
+}
 ```
 
-#### `contacts.json`
+#### `contacts` Collection
 Stores customer and vendor information.
 ```json
-[
-  {
-    "id": 1,
-    "name": "Azure Furniture",
-    "type": "Vendor",
-    "email": "azure@example.com",
-    "phone": "1234567890",
-    "address": "123 Main St, City"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "name": "Azure Furniture",
+  "type": "Vendor",
+  "email": "azure@example.com",
+  "phone": "1234567890",
+  "address": "123 Main St, City",
+  "profileImage": null // Path to uploaded image
+}
 ```
 
-#### `products.json`
-Stores details of goods and services.
+#### `products` Collection
+Stores details of goods and services, now including `currentStock`.
 ```json
-[
-  {
-    "id": 1,
-    "name": "Office Chair",
-    "type": "Goods",
-    "salesPrice": 150.00,
-    "purchasePrice": 100.00,
-    "hsnCode": "9401"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "name": "Office Chair",
+  "type": "Goods",
+  "salesPrice": "150",
+  "purchasePrice": "100",
+  "hsnCode": "9401",
+  "currentStock": 50 // Directly editable stock
+}
 ```
 
-#### `taxes.json`
+#### `taxes` Collection
 Defines tax rates.
 ```json
-[
-  {
-    "id": 1,
-    "name": "GST 5%",
-    "computation": "Percentage",
-    "applicableOn": "Sales",
-    "value": 5
-  }
-]
+// Document ID is Firestore-generated
+{
+  "name": "GST 5%",
+  "computation": "Percentage",
+  "applicableOn": "Sales",
+  "value": "5"
+}
 ```
 
-#### `accounts.json`
+#### `accounts` Collection
 Chart of Accounts entries.
 ```json
-[
-  {
-    "id": 1,
-    "name": "Cash",
-    "type": "Asset"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "name": "Cash",
+  "type": "Asset"
+}
 ```
 
-#### `purchaseOrders.json`
+#### `purchaseOrders` Collection
 Records purchase orders.
 ```json
-[
-  {
-    "id": 1,
-    "vendor": { "id": 1, "name": "Azure Furniture" },
-    "orderDate": "2025-09-20",
-    "items": [
-      {
-        "productId": 1,
-        "quantity": 10,
-        "unitPrice": 100.00,
-        "product": { "id": 1, "name": "Office Chair" }
-      }
-    ],
-    "totalAmount": 1000.00,
-    "status": "Billed"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "vendor": { "id": "firestore_contact_id", "name": "Azure Furniture" },
+  "orderDate": "2025-09-20",
+  "items": [
+    {
+      "productId": "firestore_product_id",
+      "quantity": 10,
+      "unitPrice": "100",
+      "product": { "id": "firestore_product_id", "name": "Office Chair" }
+    }
+  ],
+  "totalAmount": "1000",
+  "status": "Billed"
+}
 ```
 
-#### `vendorBills.json`
+#### `vendorBills` Collection
 Records vendor bills (purchase invoices).
 ```json
-[
-  {
-    "id": 1,
-    "purchaseOrderId": 1,
-    "vendor": { "id": 1, "name": "Azure Furniture" },
-    "billDate": "2025-09-21",
-    "dueDate": "2025-10-21",
-    "items": [ { /* ... same as PO items */ } ],
-    "totalAmount": 1000.00,
-    "status": "Paid"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "purchaseOrderId": "firestore_po_id",
+  "vendor": { "id": "firestore_contact_id", "name": "Azure Furniture" },
+  "billDate": "2025-09-21",
+  "dueDate": "2025-10-21",
+  "items": [ { /* ... same as PO items */ } ],
+  "totalAmount": "1000",
+  "status": "Paid"
+}
 ```
 
-#### `payments.json`
+#### `payments` Collection
 Records payments made against vendor bills.
 ```json
-[
-  {
-    "id": 1,
-    "vendorBillId": 1,
-    "amount": 1000.00,
-    "paymentDate": "2025-09-22",
-    "paymentMethod": "Bank"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "vendorBillId": "firestore_bill_id",
+  "amount": "1000",
+  "paymentDate": "2025-09-22",
+  "paymentMethod": "Bank"
+}
 ```
 
-#### `salesOrders.json`
+#### `salesOrders` Collection
 Records sales orders.
 ```json
-[
-  {
-    "id": 1,
-    "customer": { "id": 2, "name": "Nimesh Pathak" },
-    "orderDate": "2025-09-20",
-    "items": [
-      {
-        "productId": 1,
-        "quantity": 5,
-        "unitPrice": 150.00,
-        "product": { "id": 1, "name": "Office Chair" }
-      }
-    ],
-    "totalAmount": 750.00,
-    "status": "Invoiced"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "customer": { "id": "firestore_contact_id", "name": "Nimesh Pathak" },
+  "orderDate": "2025-09-20",
+  "items": [
+    {
+      "productId": "firestore_product_id",
+      "quantity": 5,
+      "unitPrice": "150",
+      "product": { "id": "firestore_product_id", "name": "Office Chair" }
+    }
+  ],
+  "totalAmount": "750",
+  "status": "Invoiced"
+}
 ```
 
-#### `customerInvoices.json`
+#### `customerInvoices` Collection
 Records customer invoices (sales invoices).
 ```json
-[
-  {
-    "id": 1,
-    "salesOrderId": 1,
-    "customer": { "id": 2, "name": "Nimesh Pathak" },
-    "invoiceDate": "2025-09-21",
-    "dueDate": "2025-10-21",
-    "items": [ { /* ... same as SO items */ } ],
-    "totalAmount": 750.00,
-    "status": "Paid"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "salesOrderId": "firestore_so_id",
+  "customer": { "id": "firestore_contact_id", "name": "Nimesh Pathak" },
+  "invoiceDate": "2025-09-21",
+  "dueDate": "2025-10-21",
+  "items": [ { /* ... same as SO items */ } ],
+  "totalAmount": "750",
+  "status": "Paid"
+}
 ```
 
-#### `receipts.json`
+#### `receipts` Collection
 Records receipts (payments received from customers).
 ```json
-[
-  {
-    "id": 1,
-    "customerInvoiceId": 1,
-    "amount": 750.00,
-    "receiptDate": "2025-09-22",
-    "paymentMethod": "Cash"
-  }
-]
+// Document ID is Firestore-generated
+{
+  "customerInvoiceId": "firestore_invoice_id",
+  "amount": "750",
+  "receiptDate": "2025-09-22",
+  "paymentMethod": "Cash"
+}
 ```
 
 ---
@@ -296,8 +315,8 @@ Records receipts (payments received from customers).
 All API endpoints are prefixed with `http://localhost:3001/api/`.
 
 ### Authentication
-*   `POST /auth/register`: Register a new user.
-*   `POST /auth/login`: Authenticate user and receive a JWT token.
+*   `POST /auth/register`: Register a new user (uses Firebase Authentication for user creation, saves additional details to Firestore).
+*   `GET /users/:id`: Get user details by Firebase Auth UID (requires Firebase ID Token in Authorization header).
 
 ### Master Data
 
@@ -366,9 +385,10 @@ All API endpoints are prefixed with `http://localhost:3001/api/`.
 ### Reports
 
 *   `GET /reports/profit-loss`: Generate a Profit & Loss statement.
-*   `GET /reports/stock-account`: Generate a Stock Account / Inventory report.
+*   `GET /reports/stock-account`: Generate a Stock Account / Inventory report (now based on `currentStock` field).
 *   `GET /reports/balance-sheet`: Generate a Balance Sheet report.
 *   `GET /reports/dashboard-summary`: Get summary data for the dashboard.
+*   `GET /reports/partner-ledger`: Generate a Partner Ledger report.
 
 ---
 
@@ -376,11 +396,11 @@ All API endpoints are prefixed with `http://localhost:3001/api/`.
 
 All frontend components are located in `client/src/pages/`.
 
-*   `LoginPage.jsx`: User login form.
-*   `SignupPage.jsx`: User registration form.
+*   `LoginPage.jsx`: User login form (uses Firebase Authentication).
+*   `SignupPage.jsx`: User registration form (uses Firebase Authentication).
 *   `DashboardPage.jsx`: Displays key financial summaries.
 *   `ContactPage.jsx`: CRUD interface for Contacts.
-*   `ProductPage.jsx`: CRUD interface for Products.
+*   `ProductPage.jsx`: CRUD interface for Products (now with `currentStock` field).
 *   `TaxPage.jsx`: CRUD interface for Taxes.
 *   `AccountPage.jsx`: CRUD interface for Chart of Accounts.
 *   `PurchaseOrderListPage.jsx`: Lists all Purchase Orders.
@@ -394,6 +414,8 @@ All frontend components are located in `client/src/pages/`.
 *   `ProfitLossPage.jsx`: Displays the Profit & Loss Statement.
 *   `StockAccountPage.jsx`: Displays the Stock Account / Inventory Report.
 *   `BalanceSheetPage.jsx`: Displays the Balance Sheet Report.
+*   `PartnerLedgerPage.jsx`: Displays the Partner Ledger Report.
+*   `CustomerPortalPage.jsx`: Customer-specific portal for invoices and receipts.
 
 ---
 
@@ -411,3 +433,29 @@ This project is a valuable learning experience because it:
 *   Teaches real-world ERP and accounting workflows.
 *   Demonstrates how different business modules (e.g., Sales, Inventory) are interconnected.
 *   Encourages problem-solving based on business logic rather than just pure coding challenges.
+
+---
+
+## 9. Data Migration (Optional)
+
+If you have existing data in the old JSON format and wish to migrate it to Firestore, you can use the migration scripts. **Note: These scripts are for one-time use and assume an empty target collection.**
+
+1.  Ensure your `server/db` directory contains the JSON files with your data.
+2.  Ensure your Firebase project is correctly set up and associated with the CLI (steps 2-4 in Installation & Setup).
+3.  Run the following commands from the `server/` directory:
+    ```sh
+    # Example for products
+    node migrate_products.js
+    # Repeat for other data types (contacts, purchaseOrders, vendorBills, customerInvoices)
+    ```
+    *   You will need to temporarily create the `migrate_products.js` (or `migrate_contacts.js`, etc.) file in the `server/` directory with the content I provided during the migration process. After running, delete the script file.
+
+---
+
+## 10. Troubleshooting
+
+*   **`ERR_CONNECTION_REFUSED`**: Ensure both your backend (`node index.js`) and frontend (`npm run dev`) servers are running.
+*   **`Firebase App '[DEFAULT]' has not been created`**: Ensure `client/src/firebase.js` is correctly configured with your `firebaseConfig` and that `client/src/main.jsx` imports `./firebase`.
+*   **Cloud Functions Deployment Errors (e.g., `Permission denied`, `Blaze plan required`)**: Ensure your Firebase project is on the Blaze plan and that you have waited a few minutes for permissions to propagate after enabling new APIs.
+*   **Data not appearing/updating**: Ensure your backend server is running and connected to the correct Firebase project. Check your browser's console for API errors.
+

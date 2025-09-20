@@ -1,28 +1,50 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import api from '../api';
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({
-        loginId: '',
+        email: '', // Login with email now
         password: ''
     });
     const [showPassword, setShowPassword] = useState(false);
 
     const navigate = useNavigate();
 
-    const { loginId, password } = formData;
+    const { email, password } = formData;
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const onSubmit = async e => {
         e.preventDefault();
+        const auth = getAuth();
         try {
-            const res = await axios.post('http://localhost:3001/api/auth/login', formData);
-            localStorage.setItem('token', res.data.token);
-            navigate('/dashboard');
+            // Step 1: Sign in with Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Step 2: Get the ID token
+            const token = await user.getIdToken();
+            localStorage.setItem('token', token);
+
+            // Step 3: Fetch user role from your backend
+            // We need to create this endpoint
+            const res = await axios.get(`http://localhost:3001/api/users/${user.uid}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const userRole = res.data.role;
+            localStorage.setItem('userRole', userRole);
+            localStorage.setItem('userId', user.uid); // Store Firebase UID
+
+            if (userRole === 'Contact') {
+                navigate('/customer-portal');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
-            alert(err.response.data.message);
+            console.error("Login Error:", err);
+            alert(err.message);
         }
     };
 
@@ -32,10 +54,10 @@ const LoginPage = () => {
             <form onSubmit={onSubmit}>
                 <div>
                     <input
-                        type="text"
-                        placeholder="Login ID"
-                        name="loginId"
-                        value={loginId}
+                        type="email"
+                        placeholder="Email Address"
+                        name="email"
+                        value={email}
                         onChange={onChange}
                         required
                     />

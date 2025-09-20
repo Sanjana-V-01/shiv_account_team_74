@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
+import { Link } from 'react-router-dom';
 
 const ReceiptForm = ({ invoice, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         receiptDate: new Date().toISOString().slice(0, 10),
         paymentMethod: 'Cash',
-        amount: invoice.totalAmount.toFixed(2)
+        amount: parseFloat(invoice.totalAmount || 0).toFixed(2)
     });
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -13,7 +14,7 @@ const ReceiptForm = ({ invoice, onSave, onCancel }) => {
     const onSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:3001/api/receipts', { ...formData, customerInvoiceId: invoice.id });
+            await api.post('/receipts', { ...formData, customerInvoiceId: invoice.id });
             onSave();
         } catch (err) {
             console.error("Error saving receipt:", err);
@@ -44,6 +45,8 @@ const ReceiptForm = ({ invoice, onSave, onCancel }) => {
 const CustomerInvoiceListPage = () => {
     const [invoices, setInvoices] = useState([]);
     const [receivingInvoice, setReceivingInvoice] = useState(null); // State to track which invoice is being paid
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchInvoices();
@@ -51,16 +54,30 @@ const CustomerInvoiceListPage = () => {
 
     const fetchInvoices = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/customer-invoices');
+            const res = await api.get('/customer-invoices');
             setInvoices(res.data);
         } catch (err) {
             console.error("Error fetching customer invoices:", err);
+            setError("Failed to load customer invoices.");
         }
+        setLoading(false);
     };
 
     const handleSaveReceipt = () => {
         setReceivingInvoice(null); // Hide the form
         fetchInvoices(); // Refresh the list
+    };
+
+    const handleDelete = async (invoiceId) => {
+        if (window.confirm("Are you sure you want to delete this customer invoice? This action cannot be undone.")) {
+            try {
+                await api.delete(`/customer-invoices/${invoiceId}`);
+                fetchInvoices(); // Refresh the list
+            } catch (err) {
+                console.error("Error deleting customer invoice:", err);
+                alert("Failed to delete customer invoice.");
+            }
+        }
     };
 
     return (
@@ -81,21 +98,30 @@ const CustomerInvoiceListPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {invoices.map(invoice => (
-                        <tr key={invoice.id} style={{ borderBottom: '1px solid #ddd' }}>
-                            <td style={{ padding: '8px' }}>INV-{invoice.id}</td>
-                            <td style={{ padding: '8px' }}>SO-{invoice.salesOrderId}</td>
-                            <td style={{ padding: '8px' }}>{invoice.customer ? invoice.customer.name : 'N/A'}</td>
-                            <td style={{ padding: '8px' }}>{invoice.dueDate}</td>
-                            <td style={{ padding: '8px' }}>{invoice.totalAmount.toFixed(2)}</td>
-                            <td style={{ padding: '8px' }}>{invoice.status}</td>
-                            <td style={{ padding: '8px' }}>
-                                {invoice.status === 'Open' && (
-                                    <button onClick={() => setReceivingInvoice(invoice)}>Register Receipt</button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
+                    {invoices.length === 0 ? (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '8px' }}>No customer invoices found.</td></tr>
+                    ) : (
+                        invoices.map(invoice => (
+                            <tr key={invoice.id} style={{ borderBottom: '1px solid #ddd' }}>
+                                <td style={{ padding: '8px' }}>
+                                    {invoice.id && (
+                                        <Link to={`/customer-invoices/${invoice.id}`}>INV-{invoice.id}</Link>
+                                    )}
+                                </td>
+                                <td style={{ padding: '8px' }}>SO-{invoice.salesOrderId}</td>
+                                <td style={{ padding: '8px' }}>{invoice.customer ? invoice.customer.name : 'N/A'}</td>
+                                <td style={{ padding: '8px' }}>{invoice.dueDate}</td>
+                                <td style={{ padding: '8px' }}>{parseFloat(invoice.totalAmount || 0).toFixed(2)}</td>
+                                <td style={{ padding: '8px' }}>{invoice.status}</td>
+                                <td style={{ padding: '8px' }}>
+                                    {invoice.status === 'Open' && (
+                                        <button onClick={() => setReceivingInvoice(invoice)}>Register Receipt</button>
+                                    )}
+                                    <button onClick={() => handleDelete(invoice.id)} style={{ marginLeft: '0.5rem' }}>Delete</button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>

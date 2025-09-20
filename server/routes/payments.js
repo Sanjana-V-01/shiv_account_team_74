@@ -1,63 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-
-const paymentsDbPath = path.join(__dirname, '..', 'db', 'payments.json');
-const billsDbPath = path.join(__dirname, '..', 'db', 'vendorBills.json');
-
-// Helper functions to read/write data
-const readData = (dbPath) => {
-    try {
-        const data = fs.readFileSync(dbPath);
-        return JSON.parse(data);
-    } catch (error) {
-        if (error.code === 'ENOENT') return [];
-        throw error;
-    }
-};
-
-const writeData = (dbPath, data) => {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+const { db } = require('../index');
 
 // GET all payments
-router.get('/', (req, res) => {
-    res.json(readData(paymentsDbPath));
+router.get('/', async (req, res) => {
+    try {
+        const snapshot = await db.collection('payments').get();
+        const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(payments);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
 });
 
 // POST a new payment for a vendor bill
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { vendorBillId, amount, paymentDate, paymentMethod } = req.body;
     if (!vendorBillId || !amount || !paymentDate || !paymentMethod) {
         return res.status(400).json({ message: 'Missing required payment information.' });
     }
 
-    const bills = readData(billsDbPath);
-    const billIndex = bills.findIndex(b => b.id === parseInt(vendorBillId));
+    const billRef = db.collection('vendorBills').doc(vendorBillId);
 
-    if (billIndex === -1) {
-        return res.status(404).json({ message: 'Vendor Bill not found.' });
+    try {
+        const billDoc = await billRef.get();
+        if (!billDoc.exists) {
+            return res.status(404).json({ message: 'Vendor Bill not found.' });
+        }
+
+        if (billDoc.data().status === 'Paid') {
+            return res.status(400).json({ message: 'This bill has already been paid.' });
+        }
+
+        const newPayment = { ...req.body };
+        const paymentRef = await db.collection('payments').add(newPayment);
+
+        await billRef.update({ status: 'Paid' });
+
+        res.status(201).json({ id: paymentRef.id, ...newPayment });
+    } catch (error) {
+        res.status(500).send(error.message);
     }
-
-    if (bills[billIndex].status === 'Paid') {
-        return res.status(400).json({ message: 'This bill has already been paid.' });
-    }
-
-    const payments = readData(paymentsDbPath);
-    const newPayment = {
-        id: payments.length > 0 ? payments[payments.length - 1].id + 1 : 1,
-        ...req.body
-    };
-
-    payments.push(newPayment);
-    writeData(paymentsDbPath, payments);
-
-    // Update the bill status
-    bills[billIndex].status = 'Paid';
-    writeData(billsDbPath, bills);
-
-    res.status(201).json(newPayment);
 });
 
 module.exports = router;

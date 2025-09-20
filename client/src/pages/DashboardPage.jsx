@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 
 const DashboardPage = () => {
     const [summaryData, setSummaryData] = useState(null);
@@ -8,7 +8,7 @@ const DashboardPage = () => {
     useEffect(() => {
         const fetchSummaryData = async () => {
             try {
-                const res = await axios.get('http://localhost:3001/api/reports/dashboard-summary');
+                const res = await api.get('/reports/dashboard-summary');
                 setSummaryData(res.data);
             } catch (err) {
                 console.error("Error fetching dashboard summary:", err);
@@ -31,9 +31,9 @@ const DashboardPage = () => {
     const Card = ({ title, data }) => (
         <div style={{ border: '1px solid #ccc', padding: '1rem', margin: '0.5rem', flex: 1, minWidth: '200px' }}>
             <h3>{title}</h3>
-            <p>Last 24hr: {data.last24hr.toFixed(2)}</p>
-            <p>Last 7 days: {data.last7days.toFixed(2)}</p>
-            <p>Last 30 days: {data.last30days.toFixed(2)}</p>
+            <p>Last 24hr: {parseFloat(data.last24hr || 0).toFixed(2)}</p>
+            <p>Last 7 days: {parseFloat(data.last7days || 0).toFixed(2)}</p>
+            <p>Last 30 days: {parseFloat(data.last30days || 0).toFixed(2)}</p>
         </div>
     );
 

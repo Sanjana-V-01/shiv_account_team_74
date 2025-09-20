@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 
 const ContactForm = ({ onSave, onCancel, editingContact }) => {
     const [formData, setFormData] = useState({
@@ -15,7 +15,7 @@ const ContactForm = ({ onSave, onCancel, editingContact }) => {
     useEffect(() => {
         if (editingContact) {
             setFormData(editingContact);
-            setImagePreview(editingContact.profileImage ? `http://localhost:3001${editingContact.profileImage}` : null);
+            setImagePreview(editingContact.profileImage ? `${api.defaults.baseURL}${editingContact.profileImage}` : null);
         } else {
             setFormData({ name: '', type: 'Customer', email: '', phone: '', address: '', profileImage: null });
             setImagePreview(null);
@@ -52,11 +52,11 @@ const ContactForm = ({ onSave, onCancel, editingContact }) => {
 
         try {
             if (editingContact) {
-                await axios.put(`http://localhost:3001/api/contacts/${editingContact.id}`, data, {
+                await api.put(`/contacts/${editingContact.id}`, data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             } else {
-                await axios.post('http://localhost:3001/api/contacts', data, {
+                await api.post('/contacts', data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             }
@@ -108,7 +108,7 @@ const ContactPage = () => {
 
     const fetchContacts = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/contacts');
+            const res = await api.get('/contacts');
             setContacts(res.data);
         } catch (err) {
             console.error("Error fetching contacts:", err);
@@ -135,7 +135,7 @@ const ContactPage = () => {
     const handleDelete = async (contactId) => {
         if (window.confirm("Are you sure you want to delete this contact?")) {
             try {
-                await axios.delete(`http://localhost:3001/api/contacts/${contactId}`);
+                await api.delete(`/contacts/${contactId}`);
                 fetchContacts(); // Refresh the list
             } catch (err) {
                 console.error("Error deleting contact:", err);
@@ -171,7 +171,7 @@ const ContactPage = () => {
                         <tr key={contact.id} style={{ borderBottom: '1px solid #ddd' }}>
                             <td style={{ padding: '8px' }}>
                                 {contact.profileImage && (
-                                    <img src={`http://localhost:3001${contact.profileImage}`} alt="Profile" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }} />
+                                    <img src={`${api.defaults.baseURL}${contact.profileImage}`} alt="Profile" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }} />
                                 )}
                             </td>
                             <td style={{ padding: '8px' }}>{contact.name}</td>

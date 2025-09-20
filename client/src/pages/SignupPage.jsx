@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import api from '../api';
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -24,13 +25,24 @@ const SignupPage = () => {
             alert('Passwords do not match');
             return;
         }
+
+        const auth = getAuth();
         try {
-            const newUser = { name, loginId, email, password };
-            const res = await axios.post('http://localhost:3001/api/auth/register', newUser);
-            alert(res.data.message); // "User registered successfully."
+            // Step 1: Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Step 2: Save additional user info to your backend (which saves to Firestore)
+            const newUser = { name, loginId, email }; // Password is not sent
+            await axios.post('http://localhost:3001/api/auth/register', newUser);
+
+            alert('User registered successfully.');
             navigate('/login');
-        } catch (err) {
-            alert(err.response.data.message);
+
+        } catch (error) {
+            // Handle errors from Firebase Auth or your backend
+            console.error("Signup Error:", error);
+            alert(error.message);
         }
     };
 

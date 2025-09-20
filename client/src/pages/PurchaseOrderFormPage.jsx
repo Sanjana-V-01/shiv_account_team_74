@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 import { useNavigate } from 'react-router-dom';
 
 const PurchaseOrderFormPage = () => {
@@ -23,8 +23,8 @@ const PurchaseOrderFormPage = () => {
         const fetchMasterData = async () => {
             try {
                 const [contactsRes, productsRes] = await Promise.all([
-                    axios.get('http://localhost:3001/api/contacts'),
-                    axios.get('http://localhost:3001/api/products')
+                    api.get('/contacts'),
+                    api.get('/products')
                 ]);
                 setVendors(contactsRes.data.filter(c => c.type === 'Vendor' || c.type === 'Both'));
                 setProducts(productsRes.data);
@@ -43,7 +43,7 @@ const PurchaseOrderFormPage = () => {
 
         // If product is changed, update the price
         if (name === 'productId') {
-            const product = products.find(p => p.id === parseInt(value));
+            const product = products.find(p => p.id === value); // Compare with string ID
             newItems[index].unitPrice = product ? product.purchasePrice : 0;
         }
 
@@ -70,10 +70,10 @@ const PurchaseOrderFormPage = () => {
             return;
         }
 
-        const vendor = vendors.find(v => v.id === parseInt(vendorId));
+        const vendor = vendors.find(v => v.id === vendorId); // Compare with string ID
         const finalItems = items.map(item => ({
             ...item,
-            product: products.find(p => p.id === parseInt(item.productId))
+            product: products.find(p => p.id === item.productId) // Compare with string ID
         }));
 
         const purchaseOrder = {
@@ -85,7 +85,7 @@ const PurchaseOrderFormPage = () => {
         };
 
         try {
-            await axios.post('http://localhost:3001/api/purchase-orders', purchaseOrder);
+            await api.post('/purchase-orders', purchaseOrder);
             alert('Purchase Order created successfully!');
             navigate('/purchase-orders');
         } catch (error) {

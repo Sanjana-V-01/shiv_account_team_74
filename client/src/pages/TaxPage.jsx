@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 
 const TaxForm = ({ onSave, onCancel, editingTax }) => {
     const [formData, setFormData] = useState({
@@ -23,9 +23,9 @@ const TaxForm = ({ onSave, onCancel, editingTax }) => {
         e.preventDefault();
         try {
             if (editingTax) {
-                await axios.put(`http://localhost:3001/api/taxes/${editingTax.id}`, formData);
+                await api.put(`/taxes/${editingTax.id}`, formData);
             } else {
-                await axios.post('http://localhost:3001/api/taxes', formData);
+                await api.post('/taxes', formData);
             }
             onSave();
         } catch (err) {
@@ -64,7 +64,7 @@ const TaxPage = () => {
 
     const fetchTaxes = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/taxes');
+            const res = await api.get('/taxes');
             setTaxes(res.data);
         } catch (err) {
             console.error("Error fetching taxes:", err);
@@ -90,7 +90,7 @@ const TaxPage = () => {
     const handleDelete = async (taxId) => {
         if (window.confirm("Are you sure you want to delete this tax?")) {
             try {
-                await axios.delete(`http://localhost:3001/api/taxes/${taxId}`);
+                await api.delete(`/taxes/${taxId}`);
                 fetchTaxes();
             } catch (err) {
                 console.error("Error deleting tax:", err);

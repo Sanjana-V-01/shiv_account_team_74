@@ -1,1 +1,98 @@
-[] 
+[
+  {
+    "id": 1,
+    "purchaseOrderId": 2,
+    "vendor": {
+      "id": 2,
+      "name": "ankur",
+      "type": "Vendor",
+      "email": "vishaljishu@gmail.com",
+      "phone": "08789728908",
+      "address": "kundalahalli,bengaluru",
+      "profileImage": null
+    },
+    "billDate": "2025-09-20",
+    "dueDate": "2025-10-20",
+    "items": [
+      {
+        "productId": "1",
+        "quantity": 1,
+        "unitPrice": "150",
+        "product": {
+          "id": 1,
+          "name": "chair",
+          "type": "Goods",
+          "salesPrice": "200",
+          "purchasePrice": "150",
+          "hsnCode": "9495"
+        }
+      }
+    ],
+    "totalAmount": "150.00",
+    "status": "Open"
+  },
+  {
+    "id": 2,
+    "purchaseOrderId": 1,
+    "vendor": {
+      "id": 2,
+      "name": "ankur",
+      "type": "Vendor",
+      "email": "vishaljishu@gmail.com",
+      "phone": "08789728908",
+      "address": "kundalahalli,bengaluru",
+      "profileImage": null
+    },
+    "billDate": "2025-09-20",
+    "dueDate": "2025-10-20",
+    "items": [
+      {
+        "productId": "1",
+        "quantity": 1,
+        "unitPrice": "150",
+        "product": {
+          "id": 1,
+          "name": "chair",
+          "type": "Goods",
+          "salesPrice": "200",
+          "purchasePrice": "150",
+          "hsnCode": "9495"
+        }
+      }
+    ],
+    "totalAmount": "150.00",
+    "status": "Open"
+  },
+  {
+    "id": 3,
+    "purchaseOrderId": 3,
+    "vendor": {
+      "id": 2,
+      "name": "ankur",
+      "type": "Vendor",
+      "email": "vishaljishu@gmail.com",
+      "phone": "08789728908",
+      "address": "kundalahalli,bengaluru",
+      "profileImage": null
+    },
+    "billDate": "2025-09-20",
+    "dueDate": "2025-10-20",
+    "items": [
+      {
+        "productId": "1",
+        "quantity": 1,
+        "unitPrice": "150",
+        "product": {
+          "id": 1,
+          "name": "chair",
+          "type": "Goods",
+          "salesPrice": "200",
+          "purchasePrice": "150",
+          "hsnCode": "9495"
+        }
+      }
+    ],
+    "totalAmount": "150.00",
+    "status": "Open"
+  }
+]

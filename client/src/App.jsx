@@ -11,13 +11,17 @@ import PurchaseOrderListPage from './pages/PurchaseOrderListPage';
 import PurchaseOrderFormPage from './pages/PurchaseOrderFormPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
 import VendorBillListPage from './pages/VendorBillListPage';
+import VendorBillDetailPage from './pages/VendorBillDetailPage';
 import SalesOrderListPage from './pages/SalesOrderListPage';
 import SalesOrderFormPage from './pages/SalesOrderFormPage';
 import SalesOrderDetailPage from './pages/SalesOrderDetailPage';
 import CustomerInvoiceListPage from './pages/CustomerInvoiceListPage';
+import CustomerInvoiceDetailPage from './pages/CustomerInvoiceDetailPage';
 import ProfitLossPage from './pages/ProfitLossPage';
 import StockAccountPage from './pages/StockAccountPage';
-import BalanceSheetPage from './pages/BalanceSheetPage'; // Import Balance Sheet Page
+import BalanceSheetPage from './pages/BalanceSheetPage';
+import PartnerLedgerPage from './pages/PartnerLedgerPage';
+import CustomerPortalPage from './pages/CustomerPortalPage';
 import './App.css';
 
 // A simple check to see if the user is logged in
@@ -30,7 +34,7 @@ const MainLayout = ({ children }) => (
                 <Link to="/dashboard">Dashboard</Link> | 
                 <b>Purchase:</b> <Link to="/purchase-orders">Order</Link> | <Link to="/vendor-bills">Bill</Link> | <Link to="#">Payment</Link> | 
                 <b>Sale:</b> <Link to="/sales-orders">Order</Link> | <Link to="/customer-invoices">Invoice</Link> | <Link to="#">Receipt</Link> | 
-                <b>Report:</b> <Link to="/reports/profit-loss">P&L</Link> | <Link to="/reports/balance-sheet">Balance Sheet</Link> | <Link to="/reports/stock-account">Stock</Link> | 
+                <b>Report:</b> <Link to="/reports/profit-loss">P&L</Link> | <Link to="/reports/balance-sheet">Balance Sheet</Link> | <Link to="/reports/stock-account">Stock</Link> | <Link to="/reports/partner-ledger">Partner Ledger</Link> | 
                 <b>Master Data:</b> <Link to="/contacts">Contacts</Link> | <Link to="/products">Products</Link> | <Link to="/taxes">Taxes</Link> | <Link to="/accounts">Chart of Accounts</Link>
             </div>
             <div style={{ float: 'right' }}>
@@ -43,6 +47,8 @@ const MainLayout = ({ children }) => (
 );
 
 function App() {
+  const userRole = localStorage.getItem('userRole'); // Assuming role is stored here
+
   return (
     <Router>
         <Routes>
@@ -57,14 +63,18 @@ function App() {
           <Route path="/purchase-orders/new" element={<MainLayout><PurchaseOrderFormPage /></MainLayout>} />
           <Route path="/purchase-orders/:id" element={<MainLayout><PurchaseOrderDetailPage /></MainLayout>} />
           <Route path="/vendor-bills" element={<MainLayout><VendorBillListPage /></MainLayout>} />
+          <Route path="/vendor-bills/:id" element={<MainLayout><VendorBillDetailPage /></MainLayout>} />
           <Route path="/sales-orders" element={<MainLayout><SalesOrderListPage /></MainLayout>} />
           <Route path="/sales-orders/new" element={<MainLayout><SalesOrderFormPage /></MainLayout>} />
           <Route path="/sales-orders/:id" element={<MainLayout><SalesOrderDetailPage /></MainLayout>} />
           <Route path="/customer-invoices" element={<MainLayout><CustomerInvoiceListPage /></MainLayout>} />
+          <Route path="/customer-invoices/:id" element={<MainLayout><CustomerInvoiceDetailPage /></MainLayout>} />
           <Route path="/reports/profit-loss" element={<MainLayout><ProfitLossPage /></MainLayout>} />
           <Route path="/reports/stock-account" element={<MainLayout><StockAccountPage /></MainLayout>} />
           <Route path="/reports/balance-sheet" element={<MainLayout><BalanceSheetPage /></MainLayout>} />
-          <Route path="/" element={isLoggedIn() ? <MainLayout><DashboardPage /></MainLayout> : <LoginPage />} />
+          <Route path="/reports/partner-ledger" element={<MainLayout><PartnerLedgerPage /></MainLayout>} />
+          <Route path="/customer-portal" element={<CustomerPortalPage />} />
+          <Route path="/" element={isLoggedIn() ? (userRole === 'Contact' ? <CustomerPortalPage /> : <MainLayout><DashboardPage /></MainLayout>) : <LoginPage />} />
         </Routes>
     </Router>
   );

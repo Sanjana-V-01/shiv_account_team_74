@@ -1,3 +1,14 @@
+const admin = require('firebase-admin');
+const serviceAccount = require('./firebase-service-account.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
+
+module.exports = { db };
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path'); // Import path module
@@ -28,6 +39,7 @@ app.use('/api/sales-orders', require('./routes/salesOrders')); // Use sales orde
 app.use('/api/customer-invoices', require('./routes/customerInvoices')); // Use customer invoices routes
 app.use('/api/receipts', require('./routes/receipts')); // Use receipts routes
 app.use('/api/reports', require('./routes/reports')); // Use reports routes // Use contacts routes
+app.use('/api/users', require('./routes/users')); // Use users routes
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 
 const AccountForm = ({ onSave, onCancel, editingAccount }) => {
     const [formData, setFormData] = useState({
@@ -21,9 +21,9 @@ const AccountForm = ({ onSave, onCancel, editingAccount }) => {
         e.preventDefault();
         try {
             if (editingAccount) {
-                await axios.put(`http://localhost:3001/api/accounts/${editingAccount.id}`, formData);
+                await api.put(`/accounts/${editingAccount.id}`, formData);
             } else {
-                await axios.post('http://localhost:3001/api/accounts', formData);
+                await api.post('/accounts', formData);
             }
             onSave();
         } catch (err) {
@@ -60,7 +60,7 @@ const AccountPage = () => {
 
     const fetchAccounts = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/accounts');
+            const res = await api.get('/accounts');
             setAccounts(res.data);
         } catch (err) {
             console.error("Error fetching accounts:", err);
@@ -86,7 +86,7 @@ const AccountPage = () => {
     const handleDelete = async (accountId) => {
         if (window.confirm("Are you sure you want to delete this account?")) {
             try {
-                await axios.delete(`http://localhost:3001/api/accounts/${accountId}`);
+                await api.delete(`/accounts/${accountId}`);
                 fetchAccounts();
             } catch (err) {
                 console.error("Error deleting account:", err);

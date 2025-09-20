@@ -1,23 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-
-const dbPath = path.join(__dirname, '..', 'db', 'users.json');
-const JWT_SECRET = 'your-super-secret-key-for-hackathon'; // In a real app, use environment variables
-
-// Function to read users from the database
-const readUsers = () => {
-    const data = fs.readFileSync(dbPath);
-    return JSON.parse(data);
-};
-
-// Function to write users to the database
-const writeUsers = (users) => {
-    fs.writeFileSync(dbPath, JSON.stringify(users, null, 2));
-};
+const { getAuth } = require('firebase-admin/auth');
+const { db } = require('../index'); // Import Firestore instance
 
 // --- REGISTRATION ENDPOINT ---
 // POST /api/auth/register
@@ -28,71 +12,54 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ message: 'Please provide all required fields.' });
     }
 
-    const users = readUsers();
+    try {
+        // Create user in Firebase Authentication
+        const userRecord = await getAuth().createUser({
+            email: email,
+            password: password,
+            displayName: name,
+        });
 
-    // Check for uniqueness
-    if (users.some(user => user.loginId === loginId)) {
-        return res.status(400).json({ message: 'Login ID already exists.' });
-    }
-    if (users.some(user => user.email === email)) {
-        return res.status(400).json({ message: 'Email already exists.' });
-    }
+        // Save additional user details in Firestore
+        const userRef = db.collection('users').doc(userRecord.uid);
+        await userRef.set({
+            name: name,
+            loginId: loginId,
+            email: email,
+            role: 'Invoicing User' // Default role
+        });
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+        res.status(201).json({ message: 'User registered successfully.', uid: userRecord.uid });
 
-    const newUser = {
-        id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
-        name,
-        loginId,
-        email,
-        password: hashedPassword,
-        role: 'Invoicing User' // Default role
-    };
-
-    users.push(newUser);
-    writeUsers(users);
-
-    res.status(201).json({ message: 'User registered successfully.' });
-});
-
-// --- LOGIN ENDPOINT ---
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-    const { loginId, password } = req.body;
-
-    if (!loginId || !password) {
-        return res.status(400).json({ message: 'Please provide loginId and password.' });
-    }
-
-    const users = readUsers();
-    const user = users.find(u => u.loginId === loginId);
-
-    if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials.' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials.' });
-    }
-
-    // Create JWT Token
-    const payload = {
-        user: {
-            id: user.id,
-            name: user.name,
-            role: user.role
+    } catch (error) {
+        console.error("Error creating new user:", error);
+        if (error.code === 'auth/email-already-exists') {
+            return res.status(400).json({ message: 'Email already exists.' });
         }
-    };
-
-    jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-    });
+        res.status(500).json({ message: 'Error creating new user.' });
+    }
 });
 
+// NOTE: The login process is now handled by the client-side Firebase SDK.
+// The client will receive an ID token upon successful login.
+// That token can be sent to the server and verified with a middleware.
+
+// Example of a token verification middleware (to be added to protected routes)
+/*
+const verifyToken = async (req, res, next) => {
+    const idToken = req.headers.authorization?.split('Bearer ')[1];
+    if (!idToken) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    try {
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        req.user = decodedToken;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+};
+*/
 
 module.exports = router;

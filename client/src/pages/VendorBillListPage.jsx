@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
+import { Link } from 'react-router-dom';
 
 const PaymentForm = ({ bill, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         paymentDate: new Date().toISOString().slice(0, 10),
         paymentMethod: 'Cash',
-        amount: bill.totalAmount.toFixed(2)
+        amount: parseFloat(bill.totalAmount || 0).toFixed(2)
     });
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -13,7 +14,7 @@ const PaymentForm = ({ bill, onSave, onCancel }) => {
     const onSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:3001/api/payments', { ...formData, vendorBillId: bill.id });
+            await api.post('/payments', { ...formData, vendorBillId: bill.id });
             onSave();
         } catch (err) {
             console.error("Error saving payment:", err);
@@ -44,6 +45,8 @@ const PaymentForm = ({ bill, onSave, onCancel }) => {
 const VendorBillListPage = () => {
     const [bills, setBills] = useState([]);
     const [payingBill, setPayingBill] = useState(null); // State to track which bill is being paid
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchBills();
@@ -51,17 +54,34 @@ const VendorBillListPage = () => {
 
     const fetchBills = async () => {
         try {
-            const res = await axios.get('http://localhost:3001/api/vendor-bills');
+            const res = await api.get('/vendor-bills');
             setBills(res.data);
         } catch (err) {
             console.error("Error fetching vendor bills:", err);
+            setError("Failed to load vendor bills.");
         }
+        setLoading(false);
     };
 
     const handleSavePayment = () => {
-        setPayingBill(null); // Hide the form
-        fetchBills(); // Refresh the list
+        setPayingBill(null);
+        fetchBills();
     };
+
+    const handleDelete = async (billId) => {
+        if (window.confirm("Are you sure you want to delete this vendor bill? This action cannot be undone.")) {
+            try {
+                await api.delete(`/vendor-bills/${billId}`);
+                fetchBills(); // Refresh the list
+            } catch (err) {
+                console.error("Error deleting vendor bill:", err);
+                alert("Failed to delete vendor bill.");
+            }
+        }
+    };
+
+    if (loading) return <p>Loading vendor bills...</p>;
+    if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
     return (
         <div>
@@ -81,21 +101,30 @@ const VendorBillListPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {bills.map(bill => (
-                        <tr key={bill.id} style={{ borderBottom: '1px solid #ddd' }}>
-                            <td style={{ padding: '8px' }}>BILL-{bill.id}</td>
-                            <td style={{ padding: '8px' }}>PO-{bill.purchaseOrderId}</td>
-                            <td style={{ padding: '8px' }}>{bill.vendor ? bill.vendor.name : 'N/A'}</td>
-                            <td style={{ padding: '8px' }}>{bill.dueDate}</td>
-                            <td style={{ padding: '8px' }}>{bill.totalAmount.toFixed(2)}</td>
-                            <td style={{ padding: '8px' }}>{bill.status}</td>
-                            <td style={{ padding: '8px' }}>
-                                {bill.status === 'Open' && (
-                                    <button onClick={() => setPayingBill(bill)}>Register Payment</button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
+                    {bills.length === 0 ? (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '8px' }}>No vendor bills found.</td></tr>
+                    ) : (
+                        bills.map(bill => (
+                            <tr key={bill.id} style={{ borderBottom: '1px solid #ddd' }}>
+                                <td style={{ padding: '8px' }}>
+                                    {bill.id && (
+                                        <Link to={`/vendor-bills/${bill.id}`}>BILL-{bill.id}</Link>
+                                    )}
+                                </td>
+                                <td style={{ padding: '8px' }}>PO-{bill.purchaseOrderId}</td>
+                                <td style={{ padding: '8px' }}>{bill.vendor ? bill.vendor.name : 'N/A'}</td>
+                                <td style={{ padding: '8px' }}>{bill.dueDate}</td>
+                                <td style={{ padding: '8px' }}>{parseFloat(bill.totalAmount || 0).toFixed(2)}</td>
+                                <td style={{ padding: '8px' }}>{bill.status}</td>
+                                <td style={{ padding: '8px' }}>
+                                    {bill.status === 'Open' && (
+                                        <button onClick={() => setPayingBill(bill)}>Register Payment</button>
+                                    )}
+                                    <button onClick={() => handleDelete(bill.id)} style={{ marginLeft: '0.5rem' }}>Delete</button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 
 const StockAccountPage = () => {
     const [stockData, setStockData] = useState([]);
@@ -8,7 +8,8 @@ const StockAccountPage = () => {
     useEffect(() => {
         const fetchStockData = async () => {
             try {
-                const res = await axios.get('http://localhost:3001/api/reports/stock-account');
+                // Now fetching directly from products, assuming currentStock is stored there
+                const res = await api.get('/products'); 
                 setStockData(res.data);
             } catch (err) {
                 console.error("Error fetching Stock Account data:", err);
@@ -25,7 +26,7 @@ const StockAccountPage = () => {
     }
 
     if (!stockData || stockData.length === 0) {
-        return <p>No stock data available. Please add products and transactions.</p>;
+        return <p>No stock data available. Please add products.</p>;
     }
 
     return (
@@ -44,7 +45,7 @@ const StockAccountPage = () => {
                         <tr key={product.id} style={{ borderBottom: '1px solid #ddd' }}>
                             <td style={{ padding: '8px' }}>{product.name}</td>
                             <td style={{ padding: '8px' }}>{product.type}</td>
-                            <td style={{ textAlign: 'right', padding: '8px' }}>{product.currentStock}</td>
+                            <td style={{ textAlign: 'right', padding: '8px' }}>{parseFloat(product.currentStock || 0)}</td>
                         </tr>
                     ))}
                 </tbody>

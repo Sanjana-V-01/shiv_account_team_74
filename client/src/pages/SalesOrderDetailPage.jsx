@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 import { useParams, Link, useNavigate } from 'react-router-dom';
 
 const SalesOrderDetailPage = () => {
     const { id } = useParams();
-    const navigate = useNavigate(); // For redirection
+    const navigate = useNavigate();
     const [so, setSo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -12,7 +12,7 @@ const SalesOrderDetailPage = () => {
     useEffect(() => {
         const fetchSalesOrder = async () => {
             try {
-                const res = await axios.get(`http://localhost:3001/api/sales-orders/${id}`);
+                const res = await api.get(`/sales-orders/${id}`);
                 setSo(res.data);
             } catch (err) {
                 setError('Failed to fetch sales order.');
@@ -27,7 +27,7 @@ const SalesOrderDetailPage = () => {
     const handleConvertToInvoice = async () => {
         if (window.confirm("Are you sure you want to convert this Sales Order to an Invoice?")) {
             try {
-                await axios.post('http://localhost:3001/api/customer-invoices', { salesOrderId: id });
+                await api.post('/customer-invoices', { salesOrderId: id });
                 alert('Successfully converted to invoice!');
                 navigate('/customer-invoices');
             } catch (err) {
@@ -43,7 +43,7 @@ const SalesOrderDetailPage = () => {
 
     const calculateTotal = (items) => {
         if (!items) return 0;
-        return items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        return items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice || 0)), 0);
     }
 
     return (
@@ -72,8 +72,8 @@ const SalesOrderDetailPage = () => {
                         <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
                             <td style={{ padding: '8px' }}>{item.product ? item.product.name : 'N/A'}</td>
                             <td style={{ textAlign: 'right', padding: '8px' }}>{item.quantity}</td>
-                            <td style={{ textAlign: 'right', padding: '8px' }}>{item.unitPrice.toFixed(2)}</td>
-                            <td style={{ textAlign: 'right', padding: '8px' }}>{(item.quantity * item.unitPrice).toFixed(2)}</td>
+                            <td style={{ textAlign: 'right', padding: '8px' }}>{parseFloat(item.unitPrice || 0).toFixed(2)}</td>
+                            <td style={{ textAlign: 'right', padding: '8px' }}>{(parseFloat(item.quantity) * parseFloat(item.unitPrice || 0)).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>

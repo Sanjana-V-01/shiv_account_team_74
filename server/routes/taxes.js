@@ -1,52 +1,54 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
+const { db } = require('../index');
 
-const dbPath = path.join(__dirname, '..', 'db', 'taxes.json');
-
-const readTaxes = () => {
-    const data = fs.readFileSync(dbPath);
-    return JSON.parse(data);
-};
-
-const writeTaxes = (taxes) => {
-    fs.writeFileSync(dbPath, JSON.stringify(taxes, null, 2));
-};
-
-router.get('/', (req, res) => {
-    res.json(readTaxes());
-});
-
-router.post('/', (req, res) => {
-    const taxes = readTaxes();
-    const newTax = {
-        id: taxes.length > 0 ? taxes[taxes.length - 1].id + 1 : 1,
-        ...req.body
-    };
-    taxes.push(newTax);
-    writeTaxes(taxes);
-    res.status(201).json(newTax);
-});
-
-router.put('/:id', (req, res) => {
-    let taxes = readTaxes();
-    const index = taxes.findIndex(t => t.id === parseInt(req.params.id));
-    if (index === -1) return res.status(404).json({ message: 'Tax not found' });
-
-    taxes[index] = { ...taxes[index], ...req.body };
-    writeTaxes(taxes);
-    res.json(taxes[index]);
-});
-
-router.delete('/:id', (req, res) => {
-    let taxes = readTaxes();
-    const filteredTaxes = taxes.filter(t => t.id !== parseInt(req.params.id));
-    if (taxes.length === filteredTaxes.length) {
-        return res.status(404).json({ message: 'Tax not found' });
+// Generic GET all
+const getAll = async (req, res) => {
+    try {
+        const snapshot = await db.collection('taxes').get();
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(items);
+    } catch (error) {
+        res.status(500).send(error.message);
     }
-    writeTaxes(filteredTaxes);
-    res.status(204).send();
-});
+};
+
+// Generic POST
+const createOne = async (req, res) => {
+    try {
+        const newItem = req.body;
+        const docRef = await db.collection('taxes').add(newItem);
+        res.status(201).json({ id: docRef.id, ...newItem });
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+};
+
+// Generic PUT
+const updateOne = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.collection('taxes').doc(id).update(req.body);
+        res.json({ id, ...req.body });
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+};
+
+// Generic DELETE
+const deleteOne = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.collection('taxes').doc(id).delete();
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+};
+
+router.get('/', getAll);
+router.post('/', createOne);
+router.put('/:id', updateOne);
+router.delete('/:id', deleteOne);
 
 module.exports = router;

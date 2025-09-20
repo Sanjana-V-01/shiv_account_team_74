@@ -1,68 +1,86 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-
-const dbPath = path.join(__dirname, '..', 'db', 'products.json');
-
-// Function to read products from the database
-const readProducts = () => {
-    const data = fs.readFileSync(dbPath);
-    return JSON.parse(data);
-};
-
-// Function to write products to the database
-const writeProducts = (products) => {
-    fs.writeFileSync(dbPath, JSON.stringify(products, null, 2));
-};
+const { db } = require('../index'); // Import Firestore instance
 
 // GET all products
-router.get('/', (req, res) => {
-    const products = readProducts();
-    res.json(products);
+router.get('/', async (req, res) => {
+    try {
+        const productsRef = db.collection('products');
+        const snapshot = await productsRef.get();
+        if (snapshot.empty) {
+            return res.json([]);
+        }
+        const products = [];
+        snapshot.forEach(doc => {
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        res.json(products);
+    } catch (error) {
+        console.error("Error getting products: ", error);
+        res.status(500).send("Error getting products");
+    }
 });
 
 // POST a new product
-router.post('/', (req, res) => {
-    const products = readProducts();
-    const newProduct = {
-        id: products.length > 0 ? products[products.length - 1].id + 1 : 1,
-        ...req.body
-    };
-    products.push(newProduct);
-    writeProducts(products);
-    res.status(201).json(newProduct);
+router.post('/', async (req, res) => {
+    try {
+        const newProduct = req.body;
+        const docRef = await db.collection('products').add(newProduct);
+        res.status(201).json({ id: docRef.id, ...newProduct });
+    } catch (error) {
+        console.error("Error adding product: ", error);
+        res.status(500).send("Error adding product");
+    }
 });
 
 // GET a single product by ID
-router.get('/:id', (req, res) => {
-    const products = readProducts();
-    const product = products.find(p => p.id === parseInt(req.params.id));
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
+router.get('/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const productRef = db.collection('products').doc(productId);
+        const doc = await productRef.get();
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        console.error("Error getting product: ", error);
+        res.status(500).send("Error getting product");
+    }
 });
 
 // PUT (update) a product by ID
-router.put('/:id', (req, res) => {
-    let products = readProducts();
-    const index = products.findIndex(p => p.id === parseInt(req.params.id));
-    if (index === -1) return res.status(404).json({ message: 'Product not found' });
-
-    const updatedProduct = { ...products[index], ...req.body };
-    products[index] = updatedProduct;
-    writeProducts(products);
-    res.json(updatedProduct);
+router.put('/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const productRef = db.collection('products').doc(productId);
+        const doc = await productRef.get();
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        await productRef.update(req.body);
+        res.json({ id: productId, ...req.body });
+    } catch (error) {
+        console.error("Error updating product: ", error);
+        res.status(500).send("Error updating product");
+    }
 });
 
 // DELETE a product by ID
-router.delete('/:id', (req, res) => {
-    let products = readProducts();
-    const filteredProducts = products.filter(p => p.id !== parseInt(req.params.id));
-    if (products.length === filteredProducts.length) {
-        return res.status(404).json({ message: 'Product not found' });
+router.delete('/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const productRef = db.collection('products').doc(productId);
+        const doc = await productRef.get();
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        await productRef.delete();
+        res.status(204).send(); // No Content
+    } catch (error) {
+        console.error("Error deleting product: ", error);
+        res.status(500).send("Error deleting product");
     }
-    writeProducts(filteredProducts);
-    res.status(204).send(); // No Content
 });
 
 module.exports = router;

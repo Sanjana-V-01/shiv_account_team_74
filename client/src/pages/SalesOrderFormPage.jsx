@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api'; // Import the custom axios instance
 import { useNavigate } from 'react-router-dom';
 
 const SalesOrderFormPage = () => {
@@ -23,8 +23,8 @@ const SalesOrderFormPage = () => {
         const fetchMasterData = async () => {
             try {
                 const [contactsRes, productsRes] = await Promise.all([
-                    axios.get('http://localhost:3001/api/contacts'),
-                    axios.get('http://localhost:3001/api/products')
+                    api.get('/contacts'),
+                    api.get('/products')
                 ]);
                 setCustomers(contactsRes.data.filter(c => c.type === 'Customer' || c.type === 'Both'));
                 setProducts(productsRes.data);
@@ -43,7 +43,7 @@ const SalesOrderFormPage = () => {
 
         // If product is changed, update the price
         if (name === 'productId') {
-            const product = products.find(p => p.id === parseInt(value));
+            const product = products.find(p => p.id === value); // Compare with string ID
             newItems[index].unitPrice = product ? product.salesPrice : 0;
         }
 
@@ -70,10 +70,10 @@ const SalesOrderFormPage = () => {
             return;
         }
 
-        const customer = customers.find(c => c.id === parseInt(customerId));
+        const customer = customers.find(c => c.id === customerId); // Compare with string ID
         const finalItems = items.map(item => ({
             ...item,
-            product: products.find(p => p.id === parseInt(item.productId))
+            product: products.find(p => p.id === item.productId) // Compare with string ID
         }));
 
         const salesOrder = {
@@ -85,7 +85,7 @@ const SalesOrderFormPage = () => {
         };
 
         try {
-            await axios.post('http://localhost:3001/api/sales-orders', salesOrder);
+            await api.post('/sales-orders', salesOrder);
             alert('Sales Order created successfully!');
             navigate('/sales-orders');
         } catch (error) {
