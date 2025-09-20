@@ -7,34 +7,43 @@ Follow these instructions to set up and run the project on your local machine.
 ### Prerequisites
 
 *   [Node.js](https://nodejs.org/) (v16 or later)
+*   [npm](https://www.npmjs.com/) (Node Package Manager)
 *   [Git](https://git-scm.com/)
 
 ### Installation & Setup
 
 1.  **Clone the repository:**
     ```sh
-    git clone git@github.com:Vishal-gsu/shiv_acct.git
+    git clone https://github.com/Vishal-gsu/shiv_acct.git
     cd shiv_acct
     ```
 
 2.  **Set up the Backend Server:**
-    ```sh
-    cd server
-    npm install
-    ```
+    *   Navigate to the `server` directory:
+        ```sh
+        cd server
+        ```
+    *   Install dependencies:
+        ```sh
+        npm install
+        ```
 
 3.  **Set up the Frontend Client:**
-    ```sh
-    cd ../client
-    npm install
-    ```
+    *   Navigate to the `client` directory:
+        ```sh
+        cd ../client
+        ```
+    *   Install dependencies:
+        ```sh
+        npm install
+        ```
 
 ### Running the Application
 
 1.  **Start the Backend Server:**
     *   In a terminal, navigate to the `server` directory and run:
     ```sh
-    npm start
+    npm run dev
     ```
     *   The API server will be running at `http://localhost:3001`.
 
@@ -56,7 +65,31 @@ To create a centralized and automated accounting system that replaces manual boo
 
 ---
 
-## 2. User Roles & Permissions
+## 2. Key Features Implemented
+
+*   **User Authentication**: Secure Login and Registration.
+*   **Master Data Management**: Full CRUD (Create, Read, Update, Delete) for:
+    *   Contacts (Customers, Vendors)
+    *   Products
+    *   Taxes
+    *   Chart of Accounts
+*   **Purchase Workflow**: End-to-end process:
+    *   Purchase Orders (Creation, Listing, Viewing Details)
+    *   Vendor Bills (Conversion from PO, Listing)
+    *   Payments (Registration against Bills)
+*   **Sales Workflow**: End-to-end process:
+    *   Sales Orders (Creation, Listing, Viewing Details)
+    *   Customer Invoices (Conversion from SO, Listing)
+    *   Receipts (Registration against Invoices)
+*   **Reporting**: Real-time generation of:
+    *   Profit & Loss Statement
+    *   Stock Account / Inventory Report
+    *   Balance Sheet
+*   **Dashboard**: Summary of key financial metrics.
+
+---
+
+## 3. User Roles & Permissions
 
 The system defines three distinct user roles with specific access levels:
 
@@ -68,122 +101,311 @@ The system defines three distinct user roles with specific access levels:
 
 ---
 
-## 3. UI/UX Flow & System Features
+## 4. Architecture & Data Model
 
-### 3.1. Authentication
+### 4.1. High-Level Architecture
 
-*   **Signup Page**: New users can register for an account.
-    *   **Fields**: Name, Login ID (must be unique), Email (must be unique), Password (must be a strong password), Re-enter Password.
-*   **Login Page**: Registered users can access the system.
-    *   **Fields**: Login ID, Password.
+The application follows a client-server architecture:
+*   **Frontend (Client)**: Built with React (Vite) for a dynamic single-page application (SPA).
+*   **Backend (Server)**: Built with Node.js and Express.js, serving as a RESTful API.
+*   **Database**: Simple JSON file-based storage for quick prototyping. Each major entity has its own `.json` file (e.g., `users.json`, `contacts.json`).
 
-### 3.2. Main Navigation & Dashboard
+### 4.2. Data Models (JSON File Structures)
 
-A persistent top menu bar ensures easy navigation across the application.
+#### `users.json`
+Stores user authentication details.
+```json
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "loginId": "johndoe",
+    "email": "john.doe@example.com",
+    "password": "$2a$10$hashedpassword",
+    "role": "Invoicing User"
+  }
+]
+```
 
-*   **Menu Structure**:
-    *   **Purchase**: Purchase Order, Purchase Bill, Payment
-    *   **Sale**: Sale Order, Sale Invoice, Receipt
-    *   **Report**: Profit and Loss, Balance Sheet, Stock Statement
+#### `contacts.json`
+Stores customer and vendor information.
+```json
+[
+  {
+    "id": 1,
+    "name": "Azure Furniture",
+    "type": "Vendor",
+    "email": "azure@example.com",
+    "phone": "1234567890",
+    "address": "123 Main St, City"
+  }
+]
+```
 
-*   **Dashboard**: The landing page after login provides a high-level overview of business activity.
-    *   **Total Invoices**: Clickable card showing totals for the last 24 hours, 7 days, and 30 days.
-    *   **Total Purchases**: Clickable card showing totals for the last 24 hours, 7 days, and 30 days.
-    *   **Total Payments**: Clickable card showing totals for the last 24 hours, 7 days, and 30 days.
+#### `products.json`
+Stores details of goods and services.
+```json
+[
+  {
+    "id": 1,
+    "name": "Office Chair",
+    "type": "Goods",
+    "salesPrice": 150.00,
+    "purchasePrice": 100.00,
+    "hsnCode": "9401"
+  }
+]
+```
 
-### 3.3. Master Data Management
+#### `taxes.json`
+Defines tax rates.
+```json
+[
+  {
+    "id": 1,
+    "name": "GST 5%",
+    "computation": "Percentage",
+    "applicableOn": "Sales",
+    "value": 5
+  }
+]
+```
 
-All master data sections feature a default list view of existing records. A "New" button opens a form to create a new entry. Clicking an existing record opens its details in a form view for editing.
+#### `accounts.json`
+Chart of Accounts entries.
+```json
+[
+  {
+    "id": 1,
+    "name": "Cash",
+    "type": "Asset"
+  }
+]
+```
 
-#### 3.3.1. Contact Master
-Stores details of customers and vendors.
-*   **List View Columns**: Profile Image, Contact Name, Email, Phone.
-*   **Form Fields**:
-    *   Contact Name (Text)
-    *   Type (Dropdown: Customer, Vendor, Both)
-    *   Email (Email, must be unique)
-    *   Phone (Integer)
-    *   Address (City, State, Pincode)
-    *   Profile Image (File Upload)
+#### `purchaseOrders.json`
+Records purchase orders.
+```json
+[
+  {
+    "id": 1,
+    "vendor": { "id": 1, "name": "Azure Furniture" },
+    "orderDate": "2025-09-20",
+    "items": [
+      {
+        "productId": 1,
+        "quantity": 10,
+        "unitPrice": 100.00,
+        "product": { "id": 1, "name": "Office Chair" }
+      }
+    ],
+    "totalAmount": 1000.00,
+    "status": "Billed"
+  }
+]
+```
 
-#### 3.3.2. Product Master
-Stores details of goods and services offered.
-*   **Form Fields**:
-    *   Product Name (Text)
-    *   Type (Dropdown: Goods, Service)
-    *   Category (Text)
-    *   HSN/SAC Code (Fetched from API)
-    *   Sales Price (Decimal)
-    *   Sales Tax (Selection from Tax Master)
-    *   Purchase Price (Decimal)
-    *   Purchase Tax (Selection from Tax Master)
+#### `vendorBills.json`
+Records vendor bills (purchase invoices).
+```json
+[
+  {
+    "id": 1,
+    "purchaseOrderId": 1,
+    "vendor": { "id": 1, "name": "Azure Furniture" },
+    "billDate": "2025-09-21",
+    "dueDate": "2025-10-21",
+    "items": [ { /* ... same as PO items */ } ],
+    "totalAmount": 1000.00,
+    "status": "Paid"
+  }
+]
+```
 
-#### 3.3.3. Tax Master
-Defines applicable tax rates for sales and purchases.
-*   **Form Fields**:
-    *   Tax Name (Text, e.g., "GST 5%")
-    *   Tax Computation (Dropdown: Percentage, Fixed Value)
-    *   Applicable For (Dropdown: Sales, Purchase)
-    *   Value (Decimal)
+#### `payments.json`
+Records payments made against vendor bills.
+```json
+[
+  {
+    "id": 1,
+    "vendorBillId": 1,
+    "amount": 1000.00,
+    "paymentDate": "2025-09-22",
+    "paymentMethod": "Bank"
+  }
+]
+```
 
-#### 3.3.4. Chart of Accounts Master
-A structured list of all financial accounts.
-*   **Form Fields**:
-    *   Account Name (Text, e.g., "Cash", "Sales Income")
-    *   Account Type (Dropdown: Asset, Liability, Expense, Income, Equity)
+#### `salesOrders.json`
+Records sales orders.
+```json
+[
+  {
+    "id": 1,
+    "customer": { "id": 2, "name": "Nimesh Pathak" },
+    "orderDate": "2025-09-20",
+    "items": [
+      {
+        "productId": 1,
+        "quantity": 5,
+        "unitPrice": 150.00,
+        "product": { "id": 1, "name": "Office Chair" }
+      }
+    ],
+    "totalAmount": 750.00,
+    "status": "Invoiced"
+  }
+]
+```
+
+#### `customerInvoices.json`
+Records customer invoices (sales invoices).
+```json
+[
+  {
+    "id": 1,
+    "salesOrderId": 1,
+    "customer": { "id": 2, "name": "Nimesh Pathak" },
+    "invoiceDate": "2025-09-21",
+    "dueDate": "2025-10-21",
+    "items": [ { /* ... same as SO items */ } ],
+    "totalAmount": 750.00,
+    "status": "Paid"
+  }
+]
+```
+
+#### `receipts.json`
+Records receipts (payments received from customers).
+```json
+[
+  {
+    "id": 1,
+    "customerInvoiceId": 1,
+    "amount": 750.00,
+    "receiptDate": "2025-09-22",
+    "paymentMethod": "Cash"
+  }
+]
+```
 
 ---
 
-## 4. Transaction Flow
+## 5. API Endpoints Reference
 
-Transactions are created using the predefined master data, ensuring data integrity and enabling automated ledger posting.
+All API endpoints are prefixed with `http://localhost:3001/api/`.
 
-| Step | Process | Details / Fields | Real-time Impact |
-| :--- | :--- | :--- | :--- |
-| 1 | **Purchase Order (PO)** | Select Vendor, Product, Quantity, Unit Price, Tax Rate. | None (Confirms intent to buy). |
-| 2 | **Vendor Bill** | Convert PO to Bill. Record Invoice Date, Due Date. | ● Increases Accounts Payable (Liability).<br>● Updates Partner Ledger for the vendor. |
-| 3 | **Bill Payment** | Register payment against the bill via Cash or Bank. | ● Decreases Cash/Bank (Asset).<br>● Decreases Accounts Payable (Liability). |
-| 4 | **Sales Order (SO)** | Select Customer, Product, Quantity, Unit Price, Tax Rate. | ● Reduces `Quantity on Hand` in inventory.<br>● Increases `Quantity to be Shipped`. |
-| 5 | **Customer Invoice** | Generate Invoice from SO. | ● Increases Accounts Receivable (Asset).<br>● Increases Sales (Income).<br>● Updates Partner Ledger for the customer. |
-| 6 | **Invoice Receipt** | Receive payment against the invoice via Cash or Bank. | ● Increases Cash/Bank (Asset).<br>● Decreases Accounts Receivable (Asset). |
+### Authentication
+*   `POST /auth/register`: Register a new user.
+*   `POST /auth/login`: Authenticate user and receive a JWT token.
+
+### Master Data
+
+#### Contacts
+*   `GET /contacts`: Get all contacts.
+*   `POST /contacts`: Create a new contact.
+*   `GET /contacts/:id`: Get a single contact by ID.
+*   `PUT /contacts/:id`: Update a contact by ID.
+*   `DELETE /contacts/:id`: Delete a contact by ID.
+
+#### Products
+*   `GET /products`: Get all products.
+*   `POST /products`: Create a new product.
+*   `GET /products/:id`: Get a single product by ID.
+*   `PUT /products/:id`: Update a product by ID.
+*   `DELETE /products/:id`: Delete a product by ID.
+
+#### Taxes
+*   `GET /taxes`: Get all taxes.
+*   `POST /taxes`: Create a new tax.
+*   `GET /taxes/:id`: Get a single tax by ID.
+*   `PUT /taxes/:id`: Update a tax by ID.
+*   `DELETE /taxes/:id`: Delete a tax by ID.
+
+#### Chart of Accounts
+*   `GET /accounts`: Get all accounts.
+*   `POST /accounts`: Create a new account.
+*   `GET /accounts/:id`: Get a single account by ID.
+*   `PUT /accounts/:id`: Update an account by ID.
+*   `DELETE /accounts/:id`: Delete an account by ID.
+
+### Purchase Workflow
+
+#### Purchase Orders
+*   `GET /purchase-orders`: Get all purchase orders.
+*   `POST /purchase-orders`: Create a new purchase order.
+*   `GET /purchase-orders/:id`: Get a single purchase order by ID.
+*   `PUT /purchase-orders/:id`: Update a purchase order by ID.
+*   `DELETE /purchase-orders/:id`: Delete a purchase order by ID.
+
+#### Vendor Bills
+*   `GET /vendor-bills`: Get all vendor bills.
+*   `POST /vendor-bills`: Create a new vendor bill (typically from a Purchase Order ID).
+
+#### Payments
+*   `GET /payments`: Get all payments.
+*   `POST /payments`: Record a new payment against a vendor bill.
+
+### Sales Workflow
+
+#### Sales Orders
+*   `GET /sales-orders`: Get all sales orders.
+*   `POST /sales-orders`: Create a new sales order.
+*   `GET /sales-orders/:id`: Get a single sales order by ID.
+*   `PUT /sales-orders/:id`: Update a sales order by ID.
+*   `DELETE /sales-orders/:id`: Delete a sales order by ID.
+
+#### Customer Invoices
+*   `GET /customer-invoices`: Get all customer invoices.
+*   `POST /customer-invoices`: Create a new customer invoice (typically from a Sales Order ID).
+
+#### Receipts
+*   `GET /receipts`: Get all receipts.
+*   `POST /receipts`: Record a new receipt against a customer invoice.
+
+### Reports
+
+*   `GET /reports/profit-loss`: Generate a Profit & Loss statement.
+*   `GET /reports/stock-account`: Generate a Stock Account / Inventory report.
+*   `GET /reports/balance-sheet`: Generate a Balance Sheet report.
+*   `GET /reports/dashboard-summary`: Get summary data for the dashboard.
 
 ---
 
-## 5. Reporting Requirements
+## 6. Frontend Components Overview
 
-The system generates the following reports in real-time based on recorded transactions.
+All frontend components are located in `client/src/pages/`.
 
-1.  **Balance Sheet**
-    *   A snapshot of the company's financial position at a specific point in time.
-    *   **Formula**: `Assets = Liabilities + Equity`
-    *   Shows balances for accounts like Bank, Cash, Debtors (Assets), and Creditors (Liabilities).
-
-2.  **Profit & Loss (P&L) Account**
-    *   Summarizes revenues, costs, and expenses incurred during a specific period.
-    *   Shows `Sales Income` minus `Purchases Expense` to calculate net profit or loss.
-
-3.  **Stock Statement / Inventory Report**
-    *   Tracks the movement and valuation of products.
-    *   **Columns**: Product Name, Purchased Qty, Sales Qty, Available Qty.
-
----
-
-## 6. API Documentation & Glossary
-
-*   **API Documentation**: For details on HSN/SAC code fetching and other potential integrations, please refer to the official API documentation:
-    [API Documentation Link](https://drive.google.com/file/d/1zeyV15pIQekxdDXn3p9pmssCvaQUMEBe/view?usp=sharing)
-
-*   **Mockup Link**:
-    [Excalidraw Mockup](https://link.excalidraw.com/l/65VNwvy7c4X/AtwSUrDjbwK)
-
-### Glossary
-*   **Chart of Accounts (CoA)**: A structured list of all financial accounts (Assets, Liabilities, etc.).
-*   **Partner Ledger**: A detailed report of all transactions for a specific customer or vendor.
-*   **HSN Code**: A standardized classification system for goods, used for taxation.
+*   `LoginPage.jsx`: User login form.
+*   `SignupPage.jsx`: User registration form.
+*   `DashboardPage.jsx`: Displays key financial summaries.
+*   `ContactPage.jsx`: CRUD interface for Contacts.
+*   `ProductPage.jsx`: CRUD interface for Products.
+*   `TaxPage.jsx`: CRUD interface for Taxes.
+*   `AccountPage.jsx`: CRUD interface for Chart of Accounts.
+*   `PurchaseOrderListPage.jsx`: Lists all Purchase Orders.
+*   `PurchaseOrderFormPage.jsx`: Form for creating/editing Purchase Orders.
+*   `PurchaseOrderDetailPage.jsx`: Displays details of a single Purchase Order.
+*   `VendorBillListPage.jsx`: Lists all Vendor Bills.
+*   `SalesOrderListPage.jsx`: Lists all Sales Orders.
+*   `SalesOrderFormPage.jsx`: Form for creating/editing Sales Orders.
+*   `SalesOrderDetailPage.jsx`: Displays details of a single Sales Order.
+*   `CustomerInvoiceListPage.jsx`: Lists all Customer Invoices.
+*   `ProfitLossPage.jsx`: Displays the Profit & Loss Statement.
+*   `StockAccountPage.jsx`: Displays the Stock Account / Inventory Report.
+*   `BalanceSheetPage.jsx`: Displays the Balance Sheet Report.
 
 ---
 
-## 7. Hackathon Project Importance
+## 7. External API Integration
+
+*   **HSN Code Search**: The application is designed to integrate with the GST India HSN search API for product classification. This is currently a placeholder in the Product Master form and would require backend integration to fetch data from:
+    `GET https://services.gst.gov.in/commonservices/hsn/search/qsearch`
+    (Parameters: `inputText`, `selectedType`, `category`)
+
+---
+
+## 8. Hackathon Project Importance
 
 This project is a valuable learning experience because it:
 *   Teaches real-world ERP and accounting workflows.
