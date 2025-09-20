@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "name": "Vishal kumar",
+    "loginId": "vishal_gsu",
+    "email": "vishaljishu@gmail.com",
+    "password": "$2b$10$2YVyqVh1y/ymve2bZU1x8eNyi9qNPg9He149rgVr1pUtJDrmcg20e",
+    "role": "Invoicing User"
+  }
+]
