@@ -1,12 +1,11 @@
 import axios from 'axios';
-import { getAuth } from 'firebase/auth';
+import { auth } from './firebase';
 
 const api = axios.create({
   baseURL: 'http://localhost:3001/api', // Your backend API base URL
 });
 
 api.interceptors.request.use(async (config) => {
-  const auth = getAuth();
   const user = auth.currentUser;
 
   if (user) {

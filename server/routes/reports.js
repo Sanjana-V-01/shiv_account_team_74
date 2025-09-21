@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../index'); // Import Firestore instance
+const { db } = require('../firebase-config'); // Import Firestore instance
 
 // Helper function to get date N days ago
 const getDateNDaysAgo = (n) => {

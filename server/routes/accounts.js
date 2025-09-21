@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../index');
+const { db } = require('../firebase-config');
 
 // Generic GET all
 const getAll = async (req, res) => {

@@ -11,6 +11,7 @@ Follow these instructions to set up and run the project on your local machine. T
 *   [Git](https://git-scm.com/)
 *   **Firebase Project**: A Firebase project configured with Firestore in Native Mode, Firebase Authentication, and Cloud Functions enabled. (See Firebase Setup below)
 *   **Firebase CLI**: [Firebase CLI](https://firebase.google.com/docs/cli#install_the_firebase_cli) installed globally (`npm install -g firebase-tools`)
+*   **PowerShell Execution Policy**: On Windows, you may need to set execution policy to allow npm scripts: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 ### Installation & Setup
 
@@ -62,7 +63,7 @@ Follow these instructions to set up and run the project on your local machine. T
         ```
     *   **For the Frontend Client:**
         ```sh
-        cd ../client
+        cd ../client_new
         npm install
         ```
 
@@ -82,7 +83,7 @@ Follow these instructions to set up and run the project on your local machine. T
     *   The API server will be running at `http://localhost:3001`.
 
 2.  **Start the Frontend Client:**
-    *   In a **new** terminal, navigate to the `client` directory and run:
+    *   In a **new** terminal, navigate to the `client_new` directory and run:
     ```sh
     npm run dev
     ```
@@ -315,8 +316,13 @@ Records receipts (payments received from customers).
 All API endpoints are prefixed with `http://localhost:3001/api/`.
 
 ### Authentication
-*   `POST /auth/register`: Register a new user (uses Firebase Authentication for user creation, saves additional details to Firestore).
+*   `POST /auth/register`: Register a new user (client creates user in Firebase Auth first, then backend saves additional details to Firestore).
 *   `GET /users/:id`: Get user details by Firebase Auth UID (requires Firebase ID Token in Authorization header).
+
+**Note**: The registration flow has been optimized to prevent conflicts:
+1. Client creates user in Firebase Authentication
+2. Client sends additional user data (name, loginId, email) to backend
+3. Backend finds the existing user and saves additional data to Firestore
 
 ### Master Data
 
@@ -394,7 +400,7 @@ All API endpoints are prefixed with `http://localhost:3001/api/`.
 
 ## 6. Frontend Components Overview
 
-All frontend components are located in `client/src/pages/`.
+All frontend components are located in `client_new/src/pages/`.
 
 *   `LoginPage.jsx`: User login form (uses Firebase Authentication).
 *   `SignupPage.jsx`: User registration form (uses Firebase Authentication).
@@ -452,10 +458,33 @@ If you have existing data in the old JSON format and wish to migrate it to Fires
 
 ---
 
-## 10. Troubleshooting
+## 10. Recent Fixes & Improvements
+
+### Server Stability Fixes
+*   **Fixed Circular Dependency Issue**: Separated Firebase configuration into `firebase-config.js` to prevent server crashes
+*   **Optimized Registration Flow**: Fixed 400 Bad Request errors by updating backend to work with client-side Firebase Auth creation
+*   **Improved Error Handling**: Better error messages and validation for registration endpoint
+
+### Authentication Improvements
+*   **Streamlined Registration**: Client creates user in Firebase Auth first, then backend saves additional data to Firestore
+*   **Conflict Prevention**: Backend now handles existing users gracefully without duplicate creation attempts
+*   **Data Cleanup**: Added tools to clean up orphaned Firestore data when users are deleted from Firebase Auth
+
+### Development Experience
+*   **Windows Compatibility**: Added PowerShell execution policy setup instructions
+*   **Better Documentation**: Updated all directory references to use `client_new`
+*   **Troubleshooting Guide**: Added solutions for common issues encountered during development
+
+---
+
+## 11. Troubleshooting
 
 *   **`ERR_CONNECTION_REFUSED`**: Ensure both your backend (`node index.js`) and frontend (`npm run dev`) servers are running.
-*   **`Firebase App '[DEFAULT]' has not been created`**: Ensure `client/src/firebase.js` is correctly configured with your `firebaseConfig` and that `client/src/main.jsx` imports `./firebase`.
+*   **`Firebase App '[DEFAULT]' has not been created`**: Ensure `client_new/src/firebase.js` is correctly configured with your `firebaseConfig` and that `client_new/src/main.jsx` imports `./firebase`.
 *   **Cloud Functions Deployment Errors (e.g., `Permission denied`, `Blaze plan required`)**: Ensure your Firebase project is on the Blaze plan and that you have waited a few minutes for permissions to propagate after enabling new APIs.
 *   **Data not appearing/updating**: Ensure your backend server is running and connected to the correct Firebase project. Check your browser's console for API errors.
+*   **PowerShell Execution Policy Error**: On Windows, if you get "running scripts is disabled" error, run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+*   **Server keeps closing immediately**: This was caused by circular dependency issues. The project has been fixed with separate Firebase configuration files.
+*   **400 Bad Request on Registration**: This was caused by missing password field validation. The registration flow has been optimized to work with the client-side Firebase Auth creation.
+*   **Orphaned Firestore Data**: If you delete users from Firebase Auth but data remains in Firestore, you can clean it up by running a cleanup script or manually deleting the documents.
 

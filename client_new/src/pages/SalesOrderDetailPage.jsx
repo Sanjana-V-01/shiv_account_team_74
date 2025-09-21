@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Import the custom axios instance
+import api from '../api';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 
 const SalesOrderDetailPage = () => {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // For redirection
     const [so, setSo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -43,7 +43,7 @@ const SalesOrderDetailPage = () => {
 
     const calculateTotal = (items) => {
         if (!items) return 0;
-        return items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.unitPrice || 0)), 0);
+        return items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     }
 
     return (
@@ -72,8 +72,8 @@ const SalesOrderDetailPage = () => {
                         <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
                             <td style={{ padding: '8px' }}>{item.product ? item.product.name : 'N/A'}</td>
                             <td style={{ textAlign: 'right', padding: '8px' }}>{item.quantity}</td>
-                            <td style={{ textAlign: 'right', padding: '8px' }}>{parseFloat(item.unitPrice || 0).toFixed(2)}</td>
-                            <td style={{ textAlign: 'right', padding: '8px' }}>{(parseFloat(item.quantity) * parseFloat(item.unitPrice || 0)).toFixed(2)}</td>
+                            <td style={{ textAlign: 'right', padding: '8px' }}>{item.unitPrice.toFixed(2)}</td>
+                            <td style={{ textAlign: 'right', padding: '8px' }}>{(item.quantity * item.unitPrice).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Import the custom axios instance
+import api from '../api';
 
 const ProductForm = ({ onSave, onCancel, editingProduct }) => {
     const [formData, setFormData] = useState({
@@ -7,15 +7,14 @@ const ProductForm = ({ onSave, onCancel, editingProduct }) => {
         type: 'Goods',
         salesPrice: '',
         purchasePrice: '',
-        hsnCode: '',
-        currentStock: 0 // Added currentStock field
+        hsnCode: ''
     });
 
     useEffect(() => {
         if (editingProduct) {
             setFormData(editingProduct);
         } else {
-            setFormData({ name: '', type: 'Goods', salesPrice: '', purchasePrice: '', hsnCode: '', currentStock: 0 });
+            setFormData({ name: '', type: 'Goods', salesPrice: '', purchasePrice: '', hsnCode: '' });
         }
     }, [editingProduct]);
 
@@ -47,7 +46,6 @@ const ProductForm = ({ onSave, onCancel, editingProduct }) => {
             <input name="salesPrice" value={formData.salesPrice} onChange={onChange} placeholder="Sales Price" type="number" required style={{ display: 'block', marginBottom: '0.5rem' }} />
             <input name="purchasePrice" value={formData.purchasePrice} onChange={onChange} placeholder="Purchase Price" type="number" required style={{ display: 'block', marginBottom: '0.5rem' }} />
             <input name="hsnCode" value={formData.hsnCode} onChange={onChange} placeholder="HSN Code" style={{ display: 'block', marginBottom: '0.5rem' }} />
-            <input name="currentStock" value={formData.currentStock} onChange={onChange} placeholder="Current Stock" type="number" style={{ display: 'block', marginBottom: '0.5rem' }} /> {/* Added stock field */}
             <button type="submit">Save</button>
             <button type="button" onClick={onCancel}>Cancel</button>
         </form>
@@ -117,7 +115,6 @@ const ProductPage = () => {
                         <th style={{ textAlign: 'left', padding: '8px' }}>Type</th>
                         <th style={{ textAlign: 'left', padding: '8px' }}>Sales Price</th>
                         <th style={{ textAlign: 'left', padding: '8px' }}>Purchase Price</th>
-                        <th style={{ textAlign: 'left', padding: '8px' }}>Current Stock</th> {/* Added stock header */}
                         <th style={{ textAlign: 'left', padding: '8px' }}>Actions</th>
                     </tr>
                 </thead>
@@ -128,7 +125,6 @@ const ProductPage = () => {
                             <td style={{ padding: '8px' }}>{product.type}</td>
                             <td style={{ padding: '8px' }}>{product.salesPrice}</td>
                             <td style={{ padding: '8px' }}>{product.purchasePrice}</td>
-                            <td style={{ padding: '8px' }}>{product.currentStock}</td> {/* Display stock */}
                             <td style={{ padding: '8px' }}>
                                 <button onClick={() => handleEdit(product)}>Edit</button>
                                 <button onClick={() => handleDelete(product.id)}>Delete</button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Import the custom axios instance
+import api from '../api';
 
 const TaxForm = ({ onSave, onCancel, editingTax }) => {
     const [formData, setFormData] = useState({

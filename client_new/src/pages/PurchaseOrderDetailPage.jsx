@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Import the custom axios instance
-import { useParams, Link } from 'react-router-dom';
+import api from '../api';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 
-const VendorBillDetailPage = () => {
-    const { id } = useParams();
-    const [bill, setBill] = useState(null);
+const PurchaseOrderDetailPage = () => {
+    const { id } = useParams(); // Get the ID from the URL
+    const navigate = useNavigate(); // For redirection
+    const [po, setPo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchBill = async () => {
+        const fetchPurchaseOrder = async () => {
             try {
-                const res = await api.get(`/vendor-bills/${id}`);
-                setBill(res.data);
+                const res = await api.get(`/purchase-orders/${id}`);
+                setPo(res.data);
             } catch (err) {
-                setError('Failed to fetch vendor bill.');
+                setError('Failed to fetch purchase order.');
                 console.error(err);
             }
             setLoading(false);
         };
 
-        fetchBill();
+        fetchPurchaseOrder();
     }, [id]);
+
+    const handleConvertToBill = async () => {
+        if (window.confirm("Are you sure you want to convert this Purchase Order to a Bill?")) {
+            try {
+                await api.post('/vendor-bills', { purchaseOrderId: id });
+                alert('Successfully converted to bill!');
+                navigate('/vendor-bills');
+            } catch (err) {
+                console.error("Error converting to bill:", err);
+                alert(err.response?.data?.message || "Failed to convert to bill.");
+            }
+        }
+    };
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
-    if (!bill) return <p>Vendor Bill not found.</p>;
+    if (!po) return <p>Purchase Order not found.</p>;
 
     const calculateTotal = (items) => {
         if (!items) return 0;
@@ -34,15 +48,13 @@ const VendorBillDetailPage = () => {
 
     return (
         <div>
-            <Link to="/vendor-bills"> &larr; Back to Vendor Bills</Link>
-            <h2>Vendor Bill: BILL-{bill.id}</h2>
+            <Link to="/purchase-orders"> &larr; Back to Purchase Orders</Link>
+            <h2>Purchase Order: PO-{po.id}</h2>
             
             <div>
-                <p><strong>PO ID:</strong> PO-{bill.purchaseOrderId}</p>
-                <p><strong>Vendor:</strong> {bill.vendor ? bill.vendor.name : 'N/A'}</p>
-                <p><strong>Bill Date:</strong> {bill.billDate}</p>
-                <p><strong>Due Date:</strong> {bill.dueDate}</p>
-                <p><strong>Status:</strong> {bill.status}</p>
+                <p><strong>Vendor:</strong> {po.vendor ? po.vendor.name : 'N/A'}</p>
+                <p><strong>Order Date:</strong> {po.orderDate}</p>
+                <p><strong>Status:</strong> {po.status}</p>
             </div>
 
             <h3 style={{marginTop: '2rem'}}>Items</h3>
@@ -56,7 +68,7 @@ const VendorBillDetailPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {bill.items && bill.items.map((item, index) => (
+                    {po.items && po.items.map((item, index) => (
                         <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
                             <td style={{ padding: '8px' }}>{item.product ? item.product.name : 'N/A'}</td>
                             <td style={{ textAlign: 'right', padding: '8px' }}>{item.quantity}</td>
@@ -68,12 +80,18 @@ const VendorBillDetailPage = () => {
                 <tfoot>
                     <tr>
                         <td colSpan="3" style={{ textAlign: 'right', padding: '8px' }}><strong>Total:</strong></td>
-                        <td style={{ textAlign: 'right', padding: '8px' }}><strong>{calculateTotal(bill.items).toFixed(2)}</strong></td>
+                        <td style={{ textAlign: 'right', padding: '8px' }}><strong>{calculateTotal(po.items).toFixed(2)}</strong></td>
                     </tr>
                 </tfoot>
             </table>
+
+            <div style={{marginTop: '2rem'}}>
+                <button onClick={handleConvertToBill} disabled={po.status === 'Billed'}>
+                    {po.status === 'Billed' ? 'Already Billed' : 'Convert to Bill'}
+                </button>
+            </div>
         </div>
     );
 };
 
-export default VendorBillDetailPage;
+export default PurchaseOrderDetailPage;

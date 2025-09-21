@@ -1,17 +1,9 @@
-const admin = require('firebase-admin');
-const serviceAccount = require('./firebase-service-account.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-const db = admin.firestore();
-
-module.exports = { db };
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path'); // Import path module
+const { db } = require('./firebase-config'); // Import Firestore instance
+
+// Initialize Express app
 const app = express();
 const port = 3001; // Port for the backend server
 
@@ -22,6 +14,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve s
 
 app.get('/', (req, res) => {
   res.send('Shiv Accounts API is running!');
+});
+
+app.get('/test', (req, res) => {
+  res.send('Test route works!');
 });
 
 // API Routes

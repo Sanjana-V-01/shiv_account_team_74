@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api'; // Import the custom axios instance
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
 
-const SalesOrderFormPage = () => {
+const PurchaseOrderFormPage = () => {
     const navigate = useNavigate();
     
     // Data stores
-    const [customers, setCustomers] = useState([]);
+    const [vendors, setVendors] = useState([]);
     const [products, setProducts] = useState([]);
 
     // Form state
-    const [customerId, setCustomerId] = useState('');
+    const [vendorId, setVendorId] = useState('');
     const [orderDate, setOrderDate] = useState(new Date().toISOString().slice(0, 10));
     const [items, setItems] = useState([{
         productId: '',
@@ -26,7 +26,7 @@ const SalesOrderFormPage = () => {
                     api.get('/contacts'),
                     api.get('/products')
                 ]);
-                setCustomers(contactsRes.data.filter(c => c.type === 'Customer' || c.type === 'Both'));
+                setVendors(contactsRes.data.filter(c => c.type === 'Vendor' || c.type === 'Both'));
                 setProducts(productsRes.data);
             } catch (error) {
                 console.error("Failed to fetch master data", error);
@@ -43,8 +43,8 @@ const SalesOrderFormPage = () => {
 
         // If product is changed, update the price
         if (name === 'productId') {
-            const product = products.find(p => p.id === value); // Compare with string ID
-            newItems[index].unitPrice = product ? product.salesPrice : 0;
+            const product = products.find(p => p.id === parseInt(value));
+            newItems[index].unitPrice = product ? product.purchasePrice : 0;
         }
 
         setItems(newItems);
@@ -65,19 +65,19 @@ const SalesOrderFormPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!customerId || items.some(item => !item.productId)) {
-            alert("Please select a customer and ensure all items have a selected product.");
+        if (!vendorId || items.some(item => !item.productId)) {
+            alert("Please select a vendor and ensure all items have a selected product.");
             return;
         }
 
-        const customer = customers.find(c => c.id === customerId); // Compare with string ID
+        const vendor = vendors.find(v => v.id === parseInt(vendorId));
         const finalItems = items.map(item => ({
             ...item,
-            product: products.find(p => p.id === item.productId) // Compare with string ID
+            product: products.find(p => p.id === parseInt(item.productId))
         }));
 
-        const salesOrder = {
-            customer,
+        const purchaseOrder = {
+            vendor,
             orderDate,
             items: finalItems,
             totalAmount: calculateTotal(),
@@ -85,25 +85,25 @@ const SalesOrderFormPage = () => {
         };
 
         try {
-            await api.post('/sales-orders', salesOrder);
-            alert('Sales Order created successfully!');
-            navigate('/sales-orders');
+            await api.post('/purchase-orders', purchaseOrder);
+            alert('Purchase Order created successfully!');
+            navigate('/purchase-orders');
         } catch (error) {
-            console.error("Failed to create sales order", error);
-            alert("Failed to create sales order.");
+            console.error("Failed to create purchase order", error);
+            alert("Failed to create purchase order.");
         }
     };
 
     return (
         <div>
-            <h2>New Sales Order</h2>
+            <h2>New Purchase Order</h2>
             <form onSubmit={handleSubmit}>
-                {/* Main SO Details */}
+                {/* Main PO Details */}
                 <div>
-                    <label>Customer: </label>
-                    <select value={customerId} onChange={e => setCustomerId(e.target.value)} required>
-                        <option value="">Select a Customer</option>
-                        {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    <label>Vendor: </label>
+                    <select value={vendorId} onChange={e => setVendorId(e.target.value)} required>
+                        <option value="">Select a Vendor</option>
+                        {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                     </select>
                 </div>
                 <div>
@@ -129,10 +129,10 @@ const SalesOrderFormPage = () => {
                 {/* Total and Save */}
                 <hr />
                 <h3>Total: {calculateTotal()}</h3>
-                <button type="submit">Save Sales Order</button>
+                <button type="submit">Save Purchase Order</button>
             </form>
         </div>
     );
 };
 
-export default SalesOrderFormPage;
+export default PurchaseOrderFormPage;

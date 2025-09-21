@@ -9,7 +9,7 @@
 
 const {setGlobalOptions} = require("firebase-functions");
 const {onRequest} = require("firebase-functions/v2/https");
-const {onDocumentDeleted, onDocumentCreated} = require("firebase-functions/v2/firestore"); // Added onDocumentCreated
+const {onDocumentDeleted, onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {logger} = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 
@@ -85,5 +85,28 @@ exports.onCreatePurchaseOrderUpdateStock = onDocumentCreated('purchaseOrders/{pu
 
     await Promise.all(productUpdates);
     logger.info(`Stock updated for products in Purchase Order: ${event.params.purchaseOrderId}`);
+    return null;
+});
+
+// --- Cloud Function to update stock on Sales Order creation ---
+exports.onCreateSalesOrderDecreaseStock = onDocumentCreated('salesOrders/{salesOrderId}', async (event) => {
+    const salesOrderData = event.data.data();
+    logger.info(`New Sales Order created: ${event.params.salesOrderId}`);
+
+    const productUpdates = [];
+    for (const item of salesOrderData.items) {
+        const productId = item.productId;
+        const quantity = item.quantity;
+
+        if (productId && quantity) {
+            const productRef = admin.firestore().collection('products').doc(productId);
+            productUpdates.push(productRef.update({
+                currentStock: admin.firestore.FieldValue.increment(-quantity) // Decrement stock
+            }));
+        }
+    }
+
+    await Promise.all(productUpdates);
+    logger.info(`Stock updated for products in Sales Order: ${event.params.salesOrderId}`);
     return null;
 });
