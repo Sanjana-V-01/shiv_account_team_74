@@ -1,490 +1,97 @@
-# Shiv Accounts Cloud
+Here’s a **professional, polished README.md** for your project **Shiv Accounts** — concise, structured, and developer-friendly:
 
-## Getting Started
+---
 
-Follow these instructions to set up and run the project on your local machine. The application uses Firebase for its backend, including Firestore for the database, Firebase Authentication for user management, and Cloud Functions for server-side logic like cascading deletes and stock updates.
+# Shiv Accounts
+
+**Shiv Accounts** is a cloud-based accounting and inventory management system built to streamline business operations. It automates bookkeeping, manages sales and purchase workflows, updates stock in real time, and generates essential financial reports — all within a secure, role-based environment.
+
+---
+
+## ✨ Key Features
+
+* **User Authentication** – Secure login & registration via Firebase Authentication.
+* **Master Data Management** – CRUD operations for Customers, Vendors, Products, Taxes, and Accounts.
+* **Sales Workflow** – Sales Orders → Invoices → Receipts with automated stock updates.
+* **Purchase Workflow** – Purchase Orders → Vendor Bills → Payments with cascading deletes.
+* **Reports & Insights** – Real-time Profit & Loss, Balance Sheet, Inventory Report, and Dashboard.
+* **Role-Based Access** – Admin, Accountant, and Customer/Vendor portal with tailored permissions.
+* **Cloud Functions** – Automated tasks such as cascading deletes and stock adjustments.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend**: React (Vite)
+* **Backend**: Node.js + Express.js
+* **Database**: Google Firestore (Native Mode)
+* **Authentication**: Firebase Authentication
+* **Server Logic**: Firebase Cloud Functions
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-*   [Node.js](https://nodejs.org/) (v16 or later)
-*   [npm](https://www.npmjs.com/) (Node Package Manager)
-*   [Git](https://git-scm.com/)
-*   **Firebase Project**: A Firebase project configured with Firestore in Native Mode, Firebase Authentication, and Cloud Functions enabled. (See Firebase Setup below)
-*   **Firebase CLI**: [Firebase CLI](https://firebase.google.com/docs/cli#install_the_firebase_cli) installed globally (`npm install -g firebase-tools`)
-*   **PowerShell Execution Policy**: On Windows, you may need to set execution policy to allow npm scripts: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+* [Node.js](https://nodejs.org/) v16+
+* [npm](https://www.npmjs.com/)
+* SQLlite for database management
 
-### Installation & Setup
+### Installation
 
-1.  **Clone the repository:**
-    ```sh
-    git clone https://github.com/Vishal-gsu/shiv_acct.git
-    cd shiv_acct
-    ```
+1. **Clone the Repository**
 
-2.  **Firebase Project Setup (One-time for your Firebase Project)**
-    *   Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
-    *   **Crucially**, when setting up Firestore, ensure you select **"Firestore in Native Mode"**.
-    *   Enable **Firebase Authentication** (Email/Password provider).
-    *   Upgrade your project to the **Blaze plan (pay-as-you-go)**. (Note: You only pay if you exceed the free tier limits).
+   ```sh
+   git clone https://github.com/<your-username>/shiv_accounts.git
+   cd shiv_accounts
+   ```
 
-3.  **Configure Firebase Credentials:**
-    *   **For the Client (React App):**
-        *   In your Firebase project settings, add a new Web App (`</>`).
-        *   Copy the `firebaseConfig` object provided. You will paste this into `client/src/firebase.js`.
-    *   **For the Server (Node.js/Express):**
-        *   In your Firebase project settings, go to the "Service accounts" tab.
-        *   Click "Generate new private key" and download the JSON file.
-        *   Rename this file to `firebase-service-account.json` and place it in the `server/` directory of your cloned project.
-        *   **IMPORTANT**: This file is sensitive and is already ignored by `.gitignore`.
+2. **Install Dependencies**
 
-4.  **Associate Project with Firebase CLI:**
-    *   Navigate to the `server` directory:
-        ```sh
-        cd server
-        ```
-    *   Log in to Firebase CLI:
-        ```sh
-        firebase login
-        ```
-    *   Initialize Firebase for functions and Firestore rules (select `Functions` and `Firestore`):
-        ```sh
-        firebase init
-        ```
-        *   Select "Use an existing project" and choose your Firebase project (`acct-hackathon`).
-        *   Select `JavaScript` for functions language, and `No` for ESLint.
-        *   Accept default filenames for Firestore rules and indexes.
-        *   Install npm dependencies when prompted.
+   ```sh
+   cd server && npm install
+   cd ../client && npm install
+   ```
 
-5.  **Install Node.js Dependencies:**
-    *   **For the Backend Server:**
-        ```sh
-        cd server
-        npm install
-        ```
-    *   **For the Frontend Client:**
-        ```sh
-        cd ../client_new
-        npm install
-        ```
+3. **Configure Firebase**
 
-6.  **Deploy Cloud Functions:**
-    *   From the `server` directory, deploy the Cloud Functions for cascading deletes and stock updates:
-        ```sh
-        firebase deploy --only functions
-        ```
+   * Add your Firebase web config to `client/src/firebase.js`
+   * Place your service account key as `server/firebase-service-account.json` (ignored by Git)
 
-### Running the Application
+4. **Run the Application**
 
-1.  **Start the Backend Server:**
-    *   In a terminal, navigate to the `server` directory and run:
-    ```sh
-    node index.js
-    ```
-    *   The API server will be running at `http://localhost:3001`.
+   * Start backend:
 
-2.  **Start the Frontend Client:**
-    *   In a **new** terminal, navigate to the `client_new` directory and run:
-    ```sh
-    npm run dev
-    ```
-    *   Open the URL provided in the terminal (usually `http://localhost:5173`) in your browser.
+     ```sh
+     cd server
+     node index.js
+     ```
+   * Start frontend:
+
+     ```sh
+     cd ../client
+     npm run dev
+     ```
+   * Open the provided URL (default: `http://localhost:5173`)
 
 ---
 
-## 1. Overview
+## 📊 Business Value
 
-Shiv Accounts Cloud is a cloud-based accounting system designed for Shiv Furniture. It provides a comprehensive solution for managing core business financials, from master data entry to real-time financial reporting. The system enables the smooth recording of sales, purchases, and payments, which automatically updates inventory and generates critical financial statements like the Balance Sheet and Profit & Loss report.
+Shiv Accounts provides:
 
-### Problem Statement
-To create a centralized and automated accounting system that replaces manual bookkeeping, reduces errors, and provides real-time insights into the financial health and stock levels of the business.
-
----
-
-## 2. Key Features Implemented
-
-*   **User Authentication**: Secure Login and Registration using Firebase Authentication.
-*   **Master Data Management**: Full CRUD (Create, Read, Update, Delete) for:
-    *   Contacts (Customers, Vendors)
-    *   Products (now with direct `currentStock` management)
-    *   Taxes
-    *   Chart of Accounts
-*   **Purchase Workflow**: End-to-end process:
-    *   Purchase Orders (Creation, Listing, Viewing Details)
-    *   Vendor Bills (Conversion from PO, Listing)
-    *   Payments (Registration against Bills)
-    *   **Automated Stock Update**: Creating a Purchase Order now automatically increases product `currentStock`.
-*   **Sales Workflow**: End-to-end process:
-    *   Sales Orders (Creation, Listing, Viewing Details)
-    *   Customer Invoices (Conversion from SO, Listing)
-    *   Receipts (Registration against Invoices)
-*   **Reporting**: Real-time generation of:
-    *   Profit & Loss Statement
-    *   Stock Account / Inventory Report (now based on direct `currentStock`)
-    *   Balance Sheet
-*   **Dashboard**: Summary of key financial metrics.
-*   **Cascading Deletes**: Deleting a Purchase Order automatically deletes associated Vendor Bills. Deleting a Sales Order automatically deletes associated Customer Invoices.
+* **Automation** – Eliminates manual bookkeeping and reduces errors
+* **Scalability** – Designed for growing businesses with multi-user support
+* **Insights** – Real-time financial and inventory health at your fingertips
 
 ---
 
-## 3. User Roles & Permissions
+## 🤝 Contributing
 
-The system defines three distinct user roles with specific access levels:
+Contributions, issues, and feature requests are welcome!
+Feel free to open a Pull Request or raise an Issue in the repository.
 
-| Role | Description | Key Permissions |
-| :--- | :--- | :--- |
-| **Admin (Business Owner)** | Has full control over the system. | ● Create, Modify, and Archive all Master Data.<br>● Record all Transactions.<br>● View all Reports. |
-| **Invoicing User (Accountant)** | Manages day-to-day accounting tasks. | ● Create and Modify Master Data.<br>● Record all Transactions.<br>● View all Reports. |
-| **Contact** | A customer or vendor with limited portal access. | ● View their own invoices and bills.<br>● Record payments against their transactions. |
 
----
 
-## 4. Architecture & Data Model
-
-### 4.1. High-Level Architecture
-
-The application follows a client-server architecture:
-*   **Frontend (Client)**: Built with React (Vite) for a dynamic single-page application (SPA).
-*   **Backend (Server)**: Built with Node.js and Express.js, serving as a RESTful API.
-*   **Database**: **Google Cloud Firestore (Native Mode)** for robust, scalable, and real-time data storage.
-*   **Authentication**: **Firebase Authentication** for secure user management.
-*   **Server-side Logic**: **Firebase Cloud Functions** for automated tasks like cascading deletes and stock updates.
-
-### 4.2. Data Models (Firestore Collections)
-
-Data is now stored in Firestore collections. The structure within each document generally mirrors the previous JSON structures, with IDs now being Firestore-generated document IDs.
-
-#### `users` Collection
-Stores additional user details linked by Firebase Authentication UID.
-```json
-// Document ID is Firebase Auth UID
-{
-  "name": "John Doe",
-  "loginId": "johndoe",
-  "email": "john.doe@example.com",
-  "role": "Invoicing User"
-}
-```
-
-#### `contacts` Collection
-Stores customer and vendor information.
-```json
-// Document ID is Firestore-generated
-{
-  "name": "Azure Furniture",
-  "type": "Vendor",
-  "email": "azure@example.com",
-  "phone": "1234567890",
-  "address": "123 Main St, City",
-  "profileImage": null // Path to uploaded image
-}
-```
-
-#### `products` Collection
-Stores details of goods and services, now including `currentStock`.
-```json
-// Document ID is Firestore-generated
-{
-  "name": "Office Chair",
-  "type": "Goods",
-  "salesPrice": "150",
-  "purchasePrice": "100",
-  "hsnCode": "9401",
-  "currentStock": 50 // Directly editable stock
-}
-```
-
-#### `taxes` Collection
-Defines tax rates.
-```json
-// Document ID is Firestore-generated
-{
-  "name": "GST 5%",
-  "computation": "Percentage",
-  "applicableOn": "Sales",
-  "value": "5"
-}
-```
-
-#### `accounts` Collection
-Chart of Accounts entries.
-```json
-// Document ID is Firestore-generated
-{
-  "name": "Cash",
-  "type": "Asset"
-}
-```
-
-#### `purchaseOrders` Collection
-Records purchase orders.
-```json
-// Document ID is Firestore-generated
-{
-  "vendor": { "id": "firestore_contact_id", "name": "Azure Furniture" },
-  "orderDate": "2025-09-20",
-  "items": [
-    {
-      "productId": "firestore_product_id",
-      "quantity": 10,
-      "unitPrice": "100",
-      "product": { "id": "firestore_product_id", "name": "Office Chair" }
-    }
-  ],
-  "totalAmount": "1000",
-  "status": "Billed"
-}
-```
-
-#### `vendorBills` Collection
-Records vendor bills (purchase invoices).
-```json
-// Document ID is Firestore-generated
-{
-  "purchaseOrderId": "firestore_po_id",
-  "vendor": { "id": "firestore_contact_id", "name": "Azure Furniture" },
-  "billDate": "2025-09-21",
-  "dueDate": "2025-10-21",
-  "items": [ { /* ... same as PO items */ } ],
-  "totalAmount": "1000",
-  "status": "Paid"
-}
-```
-
-#### `payments` Collection
-Records payments made against vendor bills.
-```json
-// Document ID is Firestore-generated
-{
-  "vendorBillId": "firestore_bill_id",
-  "amount": "1000",
-  "paymentDate": "2025-09-22",
-  "paymentMethod": "Bank"
-}
-```
-
-#### `salesOrders` Collection
-Records sales orders.
-```json
-// Document ID is Firestore-generated
-{
-  "customer": { "id": "firestore_contact_id", "name": "Nimesh Pathak" },
-  "orderDate": "2025-09-20",
-  "items": [
-    {
-      "productId": "firestore_product_id",
-      "quantity": 5,
-      "unitPrice": "150",
-      "product": { "id": "firestore_product_id", "name": "Office Chair" }
-    }
-  ],
-  "totalAmount": "750",
-  "status": "Invoiced"
-}
-```
-
-#### `customerInvoices` Collection
-Records customer invoices (sales invoices).
-```json
-// Document ID is Firestore-generated
-{
-  "salesOrderId": "firestore_so_id",
-  "customer": { "id": "firestore_contact_id", "name": "Nimesh Pathak" },
-  "invoiceDate": "2025-09-21",
-  "dueDate": "2025-10-21",
-  "items": [ { /* ... same as SO items */ } ],
-  "totalAmount": "750",
-  "status": "Paid"
-}
-```
-
-#### `receipts` Collection
-Records receipts (payments received from customers).
-```json
-// Document ID is Firestore-generated
-{
-  "customerInvoiceId": "firestore_invoice_id",
-  "amount": "750",
-  "receiptDate": "2025-09-22",
-  "paymentMethod": "Cash"
-}
-```
-
----
-
-## 5. API Endpoints Reference
-
-All API endpoints are prefixed with `http://localhost:3001/api/`.
-
-### Authentication
-*   `POST /auth/register`: Register a new user (client creates user in Firebase Auth first, then backend saves additional details to Firestore).
-*   `GET /users/:id`: Get user details by Firebase Auth UID (requires Firebase ID Token in Authorization header).
-
-**Note**: The registration flow has been optimized to prevent conflicts:
-1. Client creates user in Firebase Authentication
-2. Client sends additional user data (name, loginId, email) to backend
-3. Backend finds the existing user and saves additional data to Firestore
-
-### Master Data
-
-#### Contacts
-*   `GET /contacts`: Get all contacts.
-*   `POST /contacts`: Create a new contact.
-*   `GET /contacts/:id`: Get a single contact by ID.
-*   `PUT /contacts/:id`: Update a contact by ID.
-*   `DELETE /contacts/:id`: Delete a contact by ID.
-
-#### Products
-*   `GET /products`: Get all products.
-*   `POST /products`: Create a new product.
-*   `GET /products/:id`: Get a single product by ID.
-*   `PUT /products/:id`: Update a product by ID.
-*   `DELETE /products/:id`: Delete a product by ID.
-
-#### Taxes
-*   `GET /taxes`: Get all taxes.
-*   `POST /taxes`: Create a new tax.
-*   `GET /taxes/:id`: Get a single tax by ID.
-*   `PUT /taxes/:id`: Update a tax by ID.
-*   `DELETE /taxes/:id`: Delete a tax by ID.
-
-#### Chart of Accounts
-*   `GET /accounts`: Get all accounts.
-*   `POST /accounts`: Create a new account.
-*   `GET /accounts/:id`: Get a single account by ID.
-*   `PUT /accounts/:id`: Update an account by ID.
-*   `DELETE /accounts/:id`: Delete an account by ID.
-
-### Purchase Workflow
-
-#### Purchase Orders
-*   `GET /purchase-orders`: Get all purchase orders.
-*   `POST /purchase-orders`: Create a new purchase order.
-*   `GET /purchase-orders/:id`: Get a single purchase order by ID.
-*   `PUT /purchase-orders/:id`: Update a purchase order by ID.
-*   `DELETE /purchase-orders/:id`: Delete a purchase order by ID.
-
-#### Vendor Bills
-*   `GET /vendor-bills`: Get all vendor bills.
-*   `POST /vendor-bills`: Create a new vendor bill (typically from a Purchase Order ID).
-
-#### Payments
-*   `GET /payments`: Get all payments.
-*   `POST /payments`: Record a new payment against a vendor bill.
-
-### Sales Workflow
-
-#### Sales Orders
-*   `GET /sales-orders`: Get all sales orders.
-*   `POST /sales-orders`: Create a new sales order.
-*   `GET /sales-orders/:id`: Get a single sales order by ID.
-*   `PUT /sales-orders/:id`: Update a sales order by ID.
-*   `DELETE /sales-orders/:id`: Delete a sales order by ID.
-
-#### Customer Invoices
-*   `GET /customer-invoices`: Get all customer invoices.
-*   `POST /customer-invoices`: Create a new customer invoice (typically from a Sales Order ID).
-
-#### Receipts
-*   `GET /receipts`: Get all receipts.
-*   `POST /receipts`: Record a new receipt against a customer invoice.
-
-### Reports
-
-*   `GET /reports/profit-loss`: Generate a Profit & Loss statement.
-*   `GET /reports/stock-account`: Generate a Stock Account / Inventory report (now based on `currentStock` field).
-*   `GET /reports/balance-sheet`: Generate a Balance Sheet report.
-*   `GET /reports/dashboard-summary`: Get summary data for the dashboard.
-*   `GET /reports/partner-ledger`: Generate a Partner Ledger report.
-
----
-
-## 6. Frontend Components Overview
-
-All frontend components are located in `client_new/src/pages/`.
-
-*   `LoginPage.jsx`: User login form (uses Firebase Authentication).
-*   `SignupPage.jsx`: User registration form (uses Firebase Authentication).
-*   `DashboardPage.jsx`: Displays key financial summaries.
-*   `ContactPage.jsx`: CRUD interface for Contacts.
-*   `ProductPage.jsx`: CRUD interface for Products (now with `currentStock` field).
-*   `TaxPage.jsx`: CRUD interface for Taxes.
-*   `AccountPage.jsx`: CRUD interface for Chart of Accounts.
-*   `PurchaseOrderListPage.jsx`: Lists all Purchase Orders.
-*   `PurchaseOrderFormPage.jsx`: Form for creating/editing Purchase Orders.
-*   `PurchaseOrderDetailPage.jsx`: Displays details of a single Purchase Order.
-*   `VendorBillListPage.jsx`: Lists all Vendor Bills.
-*   `SalesOrderListPage.jsx`: Lists all Sales Orders.
-*   `SalesOrderFormPage.jsx`: Form for creating/editing Sales Orders.
-*   `SalesOrderDetailPage.jsx`: Displays details of a single Sales Order.
-*   `CustomerInvoiceListPage.jsx`: Lists all Customer Invoices.
-*   `ProfitLossPage.jsx`: Displays the Profit & Loss Statement.
-*   `StockAccountPage.jsx`: Displays the Stock Account / Inventory Report.
-*   `BalanceSheetPage.jsx`: Displays the Balance Sheet Report.
-*   `PartnerLedgerPage.jsx`: Displays the Partner Ledger Report.
-*   `CustomerPortalPage.jsx`: Customer-specific portal for invoices and receipts.
-
----
-
-## 7. External API Integration
-
-*   **HSN Code Search**: The application is designed to integrate with the GST India HSN search API for product classification. This is currently a placeholder in the Product Master form and would require backend integration to fetch data from:
-    `GET https://services.gst.gov.in/commonservices/hsn/search/qsearch`
-    (Parameters: `inputText`, `selectedType`, `category`)
-
----
-
-## 8. Hackathon Project Importance
-
-This project is a valuable learning experience because it:
-*   Teaches real-world ERP and accounting workflows.
-*   Demonstrates how different business modules (e.g., Sales, Inventory) are interconnected.
-*   Encourages problem-solving based on business logic rather than just pure coding challenges.
-
----
-
-## 9. Data Migration (Optional)
-
-If you have existing data in the old JSON format and wish to migrate it to Firestore, you can use the migration scripts. **Note: These scripts are for one-time use and assume an empty target collection.**
-
-1.  Ensure your `server/db` directory contains the JSON files with your data.
-2.  Ensure your Firebase project is correctly set up and associated with the CLI (steps 2-4 in Installation & Setup).
-3.  Run the following commands from the `server/` directory:
-    ```sh
-    # Example for products
-    node migrate_products.js
-    # Repeat for other data types (contacts, purchaseOrders, vendorBills, customerInvoices)
-    ```
-    *   You will need to temporarily create the `migrate_products.js` (or `migrate_contacts.js`, etc.) file in the `server/` directory with the content I provided during the migration process. After running, delete the script file.
-
----
-
-## 10. Recent Fixes & Improvements
-
-### Server Stability Fixes
-*   **Fixed Circular Dependency Issue**: Separated Firebase configuration into `firebase-config.js` to prevent server crashes
-*   **Optimized Registration Flow**: Fixed 400 Bad Request errors by updating backend to work with client-side Firebase Auth creation
-*   **Improved Error Handling**: Better error messages and validation for registration endpoint
-
-### Authentication Improvements
-*   **Streamlined Registration**: Client creates user in Firebase Auth first, then backend saves additional data to Firestore
-*   **Conflict Prevention**: Backend now handles existing users gracefully without duplicate creation attempts
-*   **Data Cleanup**: Added tools to clean up orphaned Firestore data when users are deleted from Firebase Auth
-
-### Development Experience
-*   **Windows Compatibility**: Added PowerShell execution policy setup instructions
-*   **Better Documentation**: Updated all directory references to use `client_new`
-*   **Troubleshooting Guide**: Added solutions for common issues encountered during development
-
----
-
-## 11. Troubleshooting
-
-*   **`ERR_CONNECTION_REFUSED`**: Ensure both your backend (`node index.js`) and frontend (`npm run dev`) servers are running.
-*   **`Firebase App '[DEFAULT]' has not been created`**: Ensure `client_new/src/firebase.js` is correctly configured with your `firebaseConfig` and that `client_new/src/main.jsx` imports `./firebase`.
-*   **Cloud Functions Deployment Errors (e.g., `Permission denied`, `Blaze plan required`)**: Ensure your Firebase project is on the Blaze plan and that you have waited a few minutes for permissions to propagate after enabling new APIs.
-*   **Data not appearing/updating**: Ensure your backend server is running and connected to the correct Firebase project. Check your browser's console for API errors.
-*   **PowerShell Execution Policy Error**: On Windows, if you get "running scripts is disabled" error, run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-*   **Server keeps closing immediately**: This was caused by circular dependency issues. The project has been fixed with separate Firebase configuration files.
-*   **400 Bad Request on Registration**: This was caused by missing password field validation. The registration flow has been optimized to work with the client-side Firebase Auth creation.
-*   **Orphaned Firestore Data**: If you delete users from Firebase Auth but data remains in Firestore, you can clean it up by running a cleanup script or manually deleting the documents.
 
